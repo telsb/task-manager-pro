@@ -615,6 +615,22 @@
         </div>
     </div>
 
+    <!-- ═══════════════ MANAGE MEMBERS MODAL ═══════════════ -->
+    <div class="modal-overlay" id="members-modal" aria-modal="true" role="dialog">
+        <div class="modal-card small">
+            <div class="modal-header">
+                <h2 id="members-modal-title">Group Members</h2>
+                <button class="modal-close" id="close-members-modal-btn" aria-label="Close"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-form">
+                <div id="members-list" style="display:flex;flex-direction:column;gap:10px;max-height:360px;overflow-y:auto;"></div>
+                <div class="modal-actions" style="margin-top:16px;">
+                    <button type="button" class="btn-secondary" id="cancel-members-modal-btn">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ═══════════════ CHAT POPOUT PANEL ═══════════════ -->
     <div class="chat-popout-backdrop" id="chat-popout-backdrop"></div>
     <div class="chat-popout" id="chat-popout">

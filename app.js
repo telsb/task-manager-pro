@@ -67,6 +67,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     safeInit(initNewGroupModal);
     safeInit(initBulkTaskModal);
     safeInit(initChatPopout);
+
+    // Members modal close buttons
+    const membersModal = document.getElementById('members-modal');
+    document.getElementById('close-members-modal-btn')?.addEventListener('click', () => membersModal?.classList.remove('open'));
+    document.getElementById('cancel-members-modal-btn')?.addEventListener('click', () => membersModal?.classList.remove('open'));
+    membersModal?.addEventListener('click', e => { if (e.target === membersModal) membersModal.classList.remove('open'); });
 });
 
 /* ═══════════════════════════════════════════
@@ -938,17 +944,8 @@ let invitingGroupId = null;
 
 async function fetchGroups() {
     try {
-        const cached = localStorage.getItem('groupCache');
-        if (cached && allGroups.length === 0) {
-            try {
-                allGroups = JSON.parse(cached);
-                renderGroups();
-            } catch {}
-        }
-
         const res = await fetch(`${API_BASE}/groups`, { headers: { 'X-Session-Token': currentUser.token } });
         if (!res.ok) {
-            // API failed — still update the dash list so it doesn't stay on "Loading..."
             updateDashGroupsList();
             return;
         }
@@ -956,7 +953,6 @@ async function fetchGroups() {
         localStorage.setItem('groupCache', JSON.stringify(allGroups));
         renderGroups();
     } catch {
-        // Network error — still clear loading state
         updateDashGroupsList();
     }
 }
@@ -988,6 +984,7 @@ function renderGroups() {
                 <button class="btn-secondary open-chat-btn" data-id="${g.id}">💬 Open Chat</button>
                 ${currentUser.role === 'admin' ? `
                     <button class="btn-secondary invite-btn" data-id="${g.id}" data-name="${escapeHtml(g.name)}">Invite</button>
+                    <button class="btn-secondary manage-members-btn" data-id="${g.id}" data-name="${escapeHtml(g.name)}">Members</button>
                     <button class="btn-danger-outline delete-group-btn" data-id="${g.id}">
                         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                     </button>
@@ -1002,37 +999,14 @@ function renderGroups() {
     grid.querySelectorAll('.invite-btn').forEach(btn => {
         btn.addEventListener('click', () => openInviteModal(parseInt(btn.dataset.id), btn.dataset.name));
     });
+    grid.querySelectorAll('.manage-members-btn').forEach(btn => {
+        btn.addEventListener('click', () => openMembersModal(parseInt(btn.dataset.id), btn.dataset.name));
+    });
     grid.querySelectorAll('.delete-group-btn').forEach(btn => {
         btn.addEventListener('click', () => deleteGroup(parseInt(btn.dataset.id)));
     });
     }
 
-    const dashList = document.getElementById('dash-groups-list');
-    if (dashList) {
-        if (!allGroups.length) {
-            dashList.innerHTML = `<div style="color:var(--text-muted);font-size:0.85rem;padding:8px 0;">No groups yet.</div>`;
-        } else {
-            dashList.innerHTML = allGroups.slice(0, 4).map(g => `
-                <div class="dash-group-item" data-id="${g.id}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);background:var(--bg);cursor:pointer;transition:background var(--trans);border:1px solid transparent;">
-                    <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg, var(--teal), var(--blue));color:#fff;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;flex-shrink:0;">
-                        ${g.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div style="flex:1;min-width:0;">
-                        <div style="font-size:0.88rem;font-weight:600;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(g.name)}</div>
-                        <div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px;">${g.memberCount} member${g.memberCount !== 1 ? 's' : ''}</div>
-                    </div>
-                    <div style="color:var(--teal);opacity:0.7;"><i data-lucide="message-square" style="width:18px;height:18px;"></i></div>
-                </div>
-            `).join('');
-            
-            dashList.querySelectorAll('.dash-group-item').forEach(el => {
-                el.addEventListener('mouseover', () => el.style.borderColor = 'var(--border)');
-                el.addEventListener('mouseout', () => el.style.borderColor = 'transparent');
-                el.addEventListener('click', () => openChatPopout(parseInt(el.dataset.id)));
-            });
-        }
-    }
-    // Also update the dashboard mini-list
     updateDashGroupsList();
     lucide.createIcons();
 }
@@ -1043,6 +1017,58 @@ async function deleteGroup(id) {
         await fetch(`${API_BASE}/groups/${id}`, { method: 'DELETE', headers: { 'X-Session-Token': currentUser.token } });
         await fetchGroups();
     } catch {}
+}
+
+async function openMembersModal(groupId, groupName) {
+    const modal = document.getElementById('members-modal');
+    const title = document.getElementById('members-modal-title');
+    const list  = document.getElementById('members-list');
+    if (!modal) return;
+
+    title.textContent = `Members — ${groupName}`;
+    list.innerHTML = '<div style="color:var(--text-muted);padding:12px 0;">Loading members…</div>';
+    modal.classList.add('open');
+
+    try {
+        const res = await fetch(`${API_BASE}/groups/${groupId}/members`, { headers: { 'X-Session-Token': currentUser.token } });
+        if (!res.ok) { list.innerHTML = '<div style="color:var(--red);">Failed to load members.</div>'; return; }
+        const members = await res.json();
+        if (!members.length) { list.innerHTML = '<div style="color:var(--text-muted);padding:12px 0;">No members yet.</div>'; return; }
+
+        list.innerHTML = members.map(m => `
+            <div class="member-row" data-user-id="${m.id}">
+                <div class="member-avatar">${m.name.charAt(0).toUpperCase()}</div>
+                <div class="member-info">
+                    <div class="member-name">${escapeHtml(m.name)}</div>
+                    <div class="member-sub">@${escapeHtml(m.username)} · <span class="member-role-badge ${m.role}">${m.role}</span></div>
+                </div>
+                ${m.id !== currentUser.id ? `
+                    <button class="btn-danger-outline remove-member-btn" data-user-id="${m.id}" data-group-id="${groupId}" data-name="${escapeHtml(m.name)}" style="font-size:0.75rem;padding:5px 10px;">Remove</button>
+                ` : '<span style="font-size:0.75rem;color:var(--text-muted);">You</span>'}
+            </div>
+        `).join('');
+
+        list.querySelectorAll('.remove-member-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const uid  = parseInt(btn.dataset.userId);
+                const gid  = parseInt(btn.dataset.groupId);
+                const name = btn.dataset.name;
+                if (!confirm(`Remove "${name}" from this group?`)) return;
+                try {
+                    const r = await fetch(`${API_BASE}/groups/${gid}/members/${uid}`, {
+                        method: 'DELETE',
+                        headers: { 'X-Session-Token': currentUser.token }
+                    });
+                    if (r.ok) {
+                        btn.closest('.member-row').remove();
+                        await fetchGroups();
+                    } else {
+                        alert('Failed to remove member.');
+                    }
+                } catch { alert('Network error.'); }
+            });
+        });
+    } catch { list.innerHTML = '<div style="color:var(--red);">Network error.</div>'; }
 }
 
 /* Update only the dashboard groups mini-list (can be called standalone) */

@@ -1317,3 +1317,31 @@ body[data-role="user"] .admin-only { display: none !important; }
 @media (max-width: 480px) {
     .chat-popout { width: 100vw; right: -100vw; }
 }
+
+/* ─────────────────────────────────────────
+   MEMBER ROW
+───────────────────────────────────────── */
+.member-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    border: 1px solid var(--border);
+}
+.member-avatar {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--teal), var(--blue));
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.95rem; font-weight: 700;
+    flex-shrink: 0;
+}
+.member-info { flex: 1; min-width: 0; }
+.member-name { font-size: 0.88rem; font-weight: 600; color: var(--text-main); }
+.member-sub  { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+.member-role-badge { font-weight: 700; }
+.member-role-badge.admin { color: var(--teal); }
+.member-role-badge.user  { color: var(--text-muted); }
