@@ -881,8 +881,7 @@ function renderGroups() {
             <p>No groups yet</p>
             <span>${currentUser.role === 'admin' ? 'Click "New Group" to create one' : 'You haven\'t been added to any groups yet'}</span>
         </div>`;
-        return;
-    }
+    } else {
     grid.innerHTML = allGroups.map(g => `
         <div class="group-card" data-id="${g.id}">
             <div class="gc-header">
@@ -917,6 +916,7 @@ function renderGroups() {
     grid.querySelectorAll('.delete-group-btn').forEach(btn => {
         btn.addEventListener('click', () => deleteGroup(parseInt(btn.dataset.id)));
     });
+    }
 
     const dashList = document.getElementById('dash-groups-list');
     if (dashList) {
