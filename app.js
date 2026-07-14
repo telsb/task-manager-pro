@@ -25,6 +25,7 @@ const CATEGORY_EMOJI = { general: '📌', work: '💼', personal: '👤', shoppi
 document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
     setHeaderDate();
+    initClock();
     initHeaderNav();
     initModal();
     initSearch();
@@ -357,6 +358,7 @@ function updateAll() {
     computeWeeklyRetro();
     checkDailyDigest();
     autoReprioritize();
+    checkDeadlines();
 }
 
 function renderCurrentView() {
@@ -840,4 +842,107 @@ function escapeHtml(str) {
         .replace(/&/g, '&amp;').replace(/</g, '&lt;')
         .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+}
+
+/* ═══════════════════════════════════════════
+   LIVE CLOCK
+═══════════════════════════════════════════ */
+function initClock() {
+    const el = document.getElementById('live-clock');
+    if (!el) return;
+    function tick() {
+        const now = new Date();
+        const hh = String(now.getHours()).padStart(2, '0');
+        const mm = String(now.getMinutes()).padStart(2, '0');
+        const ss = String(now.getSeconds()).padStart(2, '0');
+        el.textContent = `${hh}:${mm}:${ss}`;
+    }
+    tick();
+    setInterval(tick, 1000);
+    // Also run deadline check every minute
+    setInterval(checkDeadlines, 60 * 1000);
+}
+
+/* ═══════════════════════════════════════════
+   DEADLINE TOAST NOTIFICATIONS
+═══════════════════════════════════════════ */
+// Track which task IDs we've already toasted so we don't spam
+const _toastedIds = new Set();
+
+function checkDeadlines() {
+    const now = new Date();
+    const soon = new Date(now.getTime() + 60 * 60 * 1000);     // 1 hour
+    const verySoon = new Date(now.getTime() + 15 * 60 * 1000); // 15 minutes
+
+    allTasks.forEach(task => {
+        if (task.isCompleted || !task.dueDate) return;
+        const due = new Date(task.dueDate);
+        if (due < now) return; // already overdue, handled elsewhere
+
+        const key15  = `15_${task.id}`;
+        const key60  = `60_${task.id}`;
+
+        // 15-minute warning (critical)
+        if (due <= verySoon && !_toastedIds.has(key15)) {
+            _toastedIds.add(key15);
+            showDeadlineToast(task, due, 'critical');
+        }
+        // 1-hour warning
+        else if (due <= soon && !_toastedIds.has(key60)) {
+            _toastedIds.add(key60);
+            showDeadlineToast(task, due, 'warning');
+        }
+    });
+}
+
+function showDeadlineToast(task, dueDate, level) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const now = new Date();
+    const minsLeft = Math.round((dueDate - now) / 60000);
+    const timeLabel = minsLeft <= 1 ? 'Due in less than a minute!'
+                    : minsLeft < 60 ? `Due in ${minsLeft} minutes`
+                    : 'Due in about 1 hour';
+
+    const iconName  = level === 'critical' ? 'alarm-clock' : 'clock';
+    const titleText = level === 'critical' ? '🚨 Deadline Imminent!' : '⏰ Upcoming Deadline';
+
+    const toast = document.createElement('div');
+    toast.className = `deadline-toast ${level}`;
+    toast.innerHTML = `
+        <div class="toast-icon"><i data-lucide="${iconName}"></i></div>
+        <div class="toast-body">
+            <div class="toast-title">${titleText}</div>
+            <div class="toast-task">${escapeHtml(task.title)}</div>
+            <div class="toast-time">${timeLabel} &middot; ${dueDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</div>
+        </div>
+        <button class="toast-close" aria-label="Dismiss">&times;</button>
+    `;
+
+    // Dismiss on close button
+    toast.querySelector('.toast-close').addEventListener('click', e => {
+        e.stopPropagation();
+        dismissToast(toast);
+    });
+
+    // Click toast body to jump to task
+    toast.addEventListener('click', () => {
+        window._openEditModal(task);
+        dismissToast(toast);
+    });
+
+    container.appendChild(toast);
+    lucide.createIcons();
+
+    // Auto-dismiss after 12 seconds
+    setTimeout(() => dismissToast(toast), 12000);
+}
+
+function dismissToast(toast) {
+    if (!toast.parentNode) return;
+    toast.classList.add('toast-exit');
+    toast.addEventListener('animationend', () => toast.remove(), { once: true });
+    // Fallback in case animation doesn't fire
+    setTimeout(() => { if (toast.parentNode) toast.remove(); }, 400);
 }
