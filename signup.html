@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - TaskFlow Pro</title>
+    <title>Sign Up - TaskFlow Pro</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -20,27 +20,35 @@
         <div class="login-card">
             <div class="login-header">
                 <div class="logo-icon"><i data-lucide="check-square"></i></div>
-                <h1>TaskFlow Pro</h1>
-                <p>Sign in to your account</p>
+                <h1>Create Account</h1>
+                <p>Join your team on TaskFlow Pro</p>
             </div>
-            <form id="login-form" class="login-form">
-                <div id="login-error" class="login-error hidden"></div>
+            <form id="signup-form" class="login-form">
+                <div id="signup-error" class="login-error hidden"></div>
+                
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" required autocomplete="name" autofocus placeholder="e.g. John Doe">
+                </div>
+                
                 <div class="form-group">
                     <label for="username">Username</label>
-                    <input type="text" id="username" required autocomplete="username" autofocus placeholder="Enter your username">
+                    <input type="text" id="username" required autocomplete="username" placeholder="Choose a username">
                 </div>
+                
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" required autocomplete="current-password" placeholder="Enter your password">
+                    <input type="password" id="password" required autocomplete="new-password" placeholder="Create a strong password">
                 </div>
-                <button type="submit" class="btn-primary" id="login-btn">
-                    <span>Sign In</span>
+                
+                <button type="submit" class="btn-primary" id="signup-btn">
+                    <span>Sign Up</span>
                     <i data-lucide="arrow-right"></i>
                 </button>
             </form>
             
             <div class="login-footer">
-                Don't have an account? <a href="signup.html">Sign Up</a>
+                Already have an account? <a href="login.html">Sign In</a>
             </div>
         </div>
     </div>
@@ -53,28 +61,31 @@
             window.location.href = 'index.html';
         }
 
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
+        document.getElementById('signup-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const btn = document.getElementById('login-btn');
-            const errorEl = document.getElementById('login-error');
+            const btn = document.getElementById('signup-btn');
+            const errorEl = document.getElementById('signup-error');
+            
+            const name = document.getElementById('name').value.trim();
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
 
             errorEl.classList.add('hidden');
-            btn.innerHTML = '<span>Signing in...</span><i data-lucide="loader-2" class="spin"></i>';
+            btn.innerHTML = '<span>Creating Account...</span><i data-lucide="loader-2" class="spin"></i>';
             btn.disabled = true;
             lucide.createIcons();
 
             try {
-                const API_URL = "https://task-manager-backend-vcm9.onrender.com/api/auth/login";
+                const API_URL = "https://task-manager-backend-vcm9.onrender.com/api/auth/signup";
                 const res = await fetch(API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
+                    body: JSON.stringify({ name, username, password })
                 });
 
                 if (!res.ok) {
-                    throw new Error(res.status === 401 ? 'Invalid username or password' : 'Login failed');
+                    const data = await res.json().catch(() => ({}));
+                    throw new Error(data.error || 'Failed to create account. Username might be taken.');
                 }
 
                 const data = await res.json();
@@ -87,7 +98,7 @@
             } catch (err) {
                 errorEl.textContent = err.message;
                 errorEl.classList.remove('hidden');
-                btn.innerHTML = '<span>Sign In</span><i data-lucide="arrow-right"></i>';
+                btn.innerHTML = '<span>Sign Up</span><i data-lucide="arrow-right"></i>';
                 btn.disabled = false;
                 lucide.createIcons();
             }
