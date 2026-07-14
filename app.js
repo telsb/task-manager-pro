@@ -955,19 +955,26 @@ async function deleteGroup(id) {
     } catch {}
 }
 
-function initGroupModals() {
-    // Create Group
-    const createModal = document.getElementById('create-group-modal');
-    const createForm  = document.getElementById('create-group-form');
-    const openBtn     = document.getElementById('open-create-group-btn');
-    if (openBtn) {
-        openBtn.addEventListener('click', () => { createForm.reset(); createModal.classList.add('open'); });
-    }
-    document.getElementById('close-create-group-btn')?.addEventListener('click', () => createModal.classList.remove('open'));
-    document.getElementById('cancel-create-group-btn')?.addEventListener('click', () => createModal.classList.remove('open'));
-    createModal?.addEventListener('click', e => { if (e.target === createModal) createModal.classList.remove('open'); });
+function initNewGroupModal() {
+    const modal = document.getElementById('new-group-modal');
+    const form  = document.getElementById('new-group-form');
+    const openBtn = document.getElementById('open-new-group-btn');
+    const dashOpenBtn = document.getElementById('dash-new-group-btn');
 
-    createForm?.addEventListener('submit', async e => {
+    const openModal = () => {
+        form.reset();
+        renderGroupUserList();
+        modal.classList.add('open');
+    };
+
+    if (openBtn) openBtn.addEventListener('click', openModal);
+    if (dashOpenBtn) dashOpenBtn.addEventListener('click', openModal);
+
+    document.getElementById('close-new-group-btn')?.addEventListener('click', () => modal.classList.remove('open'));
+    document.getElementById('cancel-new-group-btn')?.addEventListener('click', () => modal.classList.remove('open'));
+    modal?.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
+
+    form?.addEventListener('submit', async e => {
         e.preventDefault();
         const name = document.getElementById('group-name').value.trim();
         const desc = document.getElementById('group-desc').value.trim();
