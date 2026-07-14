@@ -22,89 +22,30 @@
 </head>
 
 <body>
-    <!-- ═══════════════ SIDEBAR ═══════════════ -->
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-logo">
-            <div class="logo-icon">
-                <i data-lucide="check-square"></i>
-            </div>
-            <span class="logo-text">TaskFlow</span>
-        </div>
-
-        <nav class="sidebar-nav">
-            <a href="#" class="nav-item active" data-view="dashboard" id="nav-dashboard" data-tooltip="Dashboard">
-                <i data-lucide="layout-dashboard"></i>
-                <span>Dashboard</span>
-            </a>
-            <a href="#" class="nav-item" data-view="all" id="nav-all" data-tooltip="All Tasks">
-                <i data-lucide="list-checks"></i>
-                <span>All Tasks</span>
-                <span class="nav-badge" id="badge-all">0</span>
-            </a>
-            <a href="#" class="nav-item" data-view="active" id="nav-active" data-tooltip="Active">
-                <i data-lucide="clock"></i>
-                <span>Active</span>
-                <span class="nav-badge" id="badge-active">0</span>
-            </a>
-            <a href="#" class="nav-item" data-view="completed" id="nav-completed" data-tooltip="Completed">
-                <i data-lucide="circle-check-big"></i>
-                <span>Completed</span>
-            </a>
-            <a href="#" class="nav-item" data-view="overdue" id="nav-overdue" data-tooltip="Overdue">
-                <i data-lucide="triangle-alert"></i>
-                <span>Overdue</span>
-                <span class="nav-badge danger" id="badge-overdue">0</span>
-            </a>
-        </nav>
-
-        <div class="sidebar-categories">
-            <p class="sidebar-section-label">Categories</p>
-            <a href="#" class="nav-item cat-item" data-category="general" data-tooltip="General">
-                <span class="cat-dot" style="background:#3d9c94"></span><span>General</span>
-            </a>
-            <a href="#" class="nav-item cat-item" data-category="work" data-tooltip="Work">
-                <span class="cat-dot" style="background:#5c6bc0"></span><span>Work</span>
-            </a>
-            <a href="#" class="nav-item cat-item" data-category="personal" data-tooltip="Personal">
-                <span class="cat-dot" style="background:#e67e22"></span><span>Personal</span>
-            </a>
-            <a href="#" class="nav-item cat-item" data-category="shopping" data-tooltip="Shopping">
-                <span class="cat-dot" style="background:#e91e8c"></span><span>Shopping</span>
-            </a>
-            <a href="#" class="nav-item cat-item" data-category="health" data-tooltip="Health">
-                <span class="cat-dot" style="background:#38a169"></span><span>Health</span>
-            </a>
-        </div>
-
-        <div class="sidebar-footer">
-            <div class="user-avatar">AT</div>
-            <div class="user-info">
-                <span class="user-name">My Workspace</span>
-                <span class="user-sub">Personal</span>
-            </div>
-        </div>
-
-        <!-- Collapse toggle -->
-        <button class="sidebar-collapse-btn" id="sidebar-collapse-btn" aria-label="Toggle sidebar width" data-tooltip-right="Expand sidebar">
-            <i data-lucide="chevrons-left" id="collapse-icon"></i>
-        </button>
-    </aside>
-
-    <!-- ═══════════════ MAIN CONTENT ═══════════════ -->
+    <!-- ═══════════════ MAIN CONTENT (NO SIDEBAR) ═══════════════ -->
     <div class="main-wrapper">
 
         <!-- HEADER -->
         <header class="top-header">
             <div class="header-left">
-                <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar">
-                    <i data-lucide="menu"></i>
-                </button>
+                <div class="logo-icon">
+                    <i data-lucide="check-square"></i>
+                </div>
                 <div class="header-title-block">
                     <h1 id="page-title">Dashboard</h1>
                     <span id="page-subtitle">Track and manage your tasks</span>
                 </div>
             </div>
             <div class="header-right">
+                <!-- View Tabs -->
+                <nav class="header-nav" id="header-nav">
+                    <button class="header-nav-btn active" data-view="dashboard"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></button>
+                    <button class="header-nav-btn" data-view="all"><i data-lucide="list-checks"></i><span>All Tasks</span><span class="nav-count" id="badge-all">0</span></button>
+                    <button class="header-nav-btn" data-view="active"><i data-lucide="clock"></i><span>Active</span><span class="nav-count" id="badge-active">0</span></button>
+                    <button class="header-nav-btn" data-view="completed"><i data-lucide="circle-check-big"></i><span>Completed</span></button>
+                    <button class="header-nav-btn" data-view="overdue"><i data-lucide="triangle-alert"></i><span>Overdue</span><span class="nav-count danger" id="badge-overdue">0</span></button>
+                </nav>
+                <div class="header-sep"></div>
                 <div class="search-bar">
                     <i data-lucide="search"></i>
                     <input type="text" id="search-input" placeholder="Search tasks..." autocomplete="off">
@@ -134,7 +75,7 @@
         <div class="view active" id="view-dashboard">
 
             <!-- STATS STRIP -->
-            <div class="stats-strip compact-stats">
+            <div class="stats-strip">
                 <div class="stat-item" data-view="all" id="stat-total" role="button" tabindex="0" aria-label="Total tasks">
                     <span class="stat-label">Total</span>
                     <span class="stat-value" id="kpi-total-val">0</span>
@@ -191,7 +132,6 @@
                         <button class="tab-btn" data-tab="retro" id="tab-btn-retro">
                             <i data-lucide="calendar-range"></i><span>Week</span>
                         </button>
-                        <div class="tab-indicator" id="tab-indicator"></div>
                     </div>
 
                     <div class="tab-content active" id="tab-completion">
@@ -351,7 +291,6 @@
                 <div class="form-group">
                     <label for="task-title">Task Title <span class="required">*</span></label>
                     <input type="text" id="task-title" placeholder="What needs to be done?" required autocomplete="off">
-                    <div class="auto-cat-hint" id="auto-cat-hint"></div>
                 </div>
 
                 <div class="form-group">
@@ -413,6 +352,8 @@
                 </button>
             </div>
         </div>
+    </div>
+
     <!-- ═══════════════ DAILY DIGEST MODAL ═══════════════ -->
     <div class="modal-overlay" id="digest-modal" aria-modal="true" role="dialog">
         <div class="modal-card">
@@ -422,9 +363,7 @@
                     <i data-lucide="x"></i>
                 </button>
             </div>
-            <div id="digest-content" style="padding: 10px 0; line-height: 1.6; color: var(--text-main);">
-                <!-- Digest injected here -->
-            </div>
+            <div id="digest-content" class="digest-body"></div>
             <div class="modal-actions">
                 <button class="btn-primary" id="ack-digest-btn" style="width: 100%;">Let's Go!</button>
             </div>
