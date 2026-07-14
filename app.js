@@ -34,6 +34,9 @@ document.addEventListener('DOMContentLoaded', () => {
     initSearch();
     initFilters();
     initCharts();
+    initDensityToggle();
+    initCommandPalette();
+    initQuickAdd();
     fetchTasks();
 });
 
@@ -112,6 +115,14 @@ function initSidebar() {
             sidebar.classList.remove('open');
         }
     });
+
+    // Sidebar collapse (icon-only mode)
+    const collapseBtn = document.getElementById('sidebar-collapse-btn');
+    if (collapseBtn) {
+        collapseBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+        });
+    }
 }
 
 function switchView(viewName) {
@@ -133,7 +144,7 @@ function switchView(viewName) {
         dashboard: ['Dashboard', 'Track and manage your tasks'],
         all: ['All Tasks', 'Browse and filter every task'],
         active: ['Active Tasks', 'Tasks in progress'],
-        completed: ['Completed Tasks', 'Tasks you've finished'],
+        completed: ['Completed Tasks', "Tasks you've finished"],
         overdue: ['Overdue Tasks', 'Tasks past their due date']
     };
 
@@ -151,7 +162,7 @@ function switchView(viewName) {
 async function fetchTasks() {
     const loader = document.getElementById('loading-indicator');
 
-    // Show waking-up message immediately — Render free tier cold starts can take 60–90s
+    // Show waking-up message quickly — Render free tier cold starts can take 60–90s
     loader.textContent = '⏳ Waking up server… (this may take ~30s on first load)';
     loader.classList.remove('hidden');
 
@@ -185,9 +196,13 @@ function normalizeTask(t) {
         description: t.description ?? t.Description ?? '',
         isCompleted: t.isCompleted ?? t.IsCompleted ?? false,
         createdAt:   t.createdAt ?? t.CreatedAt ?? new Date().toISOString(),
+        completedAt: t.completedAt ?? t.CompletedAt ?? null,
         priority:    (t.priority ?? t.Priority ?? 'medium').toLowerCase(),
         dueDate:     t.dueDate ?? t.DueDate ?? null,
-        category:    (t.category ?? t.Category ?? 'general').toLowerCase()
+        category:    (t.category ?? t.Category ?? 'general').toLowerCase(),
+        energyLevel: (t.energyLevel ?? t.EnergyLevel ?? 'medium').toLowerCase(),
+        rescheduleCount: t.rescheduleCount ?? t.RescheduleCount ?? 0,
+        recurrenceRule: t.recurrenceRule ?? t.RecurrenceRule ?? null
     };
 }
 
@@ -425,17 +440,22 @@ function renderTaskItems(listId, tasks, showBulk) {
         const dueFmt = formatDueDate(task.dueDate);
         const overdue = isOverdue(task);
 
+        let agingClass = '';
+        if (task.rescheduleCount >= 3) agingClass = 'task-aging-2';
+        else if (task.rescheduleCount >= 1) agingClass = 'task-aging-1';
+
         li.innerHTML = `
             ${showBulk ? `<input type="checkbox" class="bulk-select" data-id="${task.id}" ${selectedTaskIds.has(task.id) ? 'checked' : ''} aria-label="Select task">` : ''}
             <div class="task-check ${task.isCompleted ? 'checked' : ''}" data-id="${task.id}" role="checkbox" aria-checked="${task.isCompleted}" tabindex="0">
                 <i data-lucide="check"></i>
             </div>
-            <div class="task-body" data-id="${task.id}">
+            <div class="task-body ${agingClass}" data-id="${task.id}">
                 <div class="task-title-text">${escapeHtml(task.title)}</div>
                 ${task.description ? `<div class="task-desc-text">${escapeHtml(task.description)}</div>` : ''}
                 <div class="task-meta">
                     <span class="badge badge-${task.priority}">${PRIORITY_LABEL[task.priority] || task.priority}</span>
                     <span class="badge-cat">${CATEGORY_EMOJI[task.category] || '📌'} ${capitalize(task.category)}</span>
+                    <span class="badge-energy ${task.energyLevel}">⚡ ${capitalize(task.energyLevel)}</span>
                     ${dueFmt ? `<span class="task-due ${overdue ? 'overdue' : ''}"><i data-lucide="calendar"></i>${overdue ? '⚠ Overdue · ' : ''}${dueFmt}</span>` : ''}
                 </div>
             </div>
@@ -711,4 +731,190 @@ function escapeHtml(str) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+}
+
+/* ═══════════════════════════════════════════
+   NEW FEATURES (NLP, Automations, Toggles)
+   ═══════════════════════════════════════════ */
+function initDensityToggle() {
+    const btn = document.getElementById('density-toggle');
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.task-list').forEach(list => list.classList.toggle('compact'));
+    });
+}
+
+function initCommandPalette() {
+    const palette = document.getElementById('command-palette');
+    const input = document.getElementById('cmd-input');
+    const results = document.getElementById('cmd-results');
+    if (!palette) return;
+
+    window.addEventListener('keydown', e => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+            e.preventDefault();
+            palette.classList.add('open');
+            input.focus();
+        }
+        if (e.key === 'Escape' && palette.classList.contains('open')) {
+            palette.classList.remove('open');
+        }
+    });
+
+    palette.addEventListener('click', e => {
+        if (e.target === palette) palette.classList.remove('open');
+    });
+}
+
+function initQuickAdd() {
+    const form = document.getElementById('quick-add-form');
+    const input = document.getElementById('quick-add-input');
+    const preview = document.getElementById('quick-add-preview');
+    if (!form) return;
+
+    input.addEventListener('input', () => {
+        const val = input.value;
+        if (!val) {
+            preview.style.display = 'none';
+            return;
+        }
+        const parsed = parseQuickAdd(val);
+        preview.style.display = 'block';
+        preview.innerHTML = `
+            <span class="badge badge-${parsed.priority}">${parsed.priority}</span>
+            <span class="badge-cat">${parsed.category}</span>
+            <span class="badge-energy ${parsed.energyLevel}">⚡ ${parsed.energyLevel}</span>
+            ${parsed.dueDate ? `<span>📅 ${new Date(parsed.dueDate).toLocaleDateString()}</span>` : ''}
+        `;
+    });
+
+    form.addEventListener('submit', async e => {
+        e.preventDefault();
+        const val = input.value;
+        if (!val) return;
+        const parsed = parseQuickAdd(val);
+        await addTask({
+            title: parsed.title,
+            priority: parsed.priority,
+            category: parsed.category,
+            energyLevel: parsed.energyLevel,
+            dueDate: parsed.dueDate
+        });
+        input.value = '';
+        preview.style.display = 'none';
+    });
+}
+
+function parseQuickAdd(text) {
+    let title = text;
+    let priority = 'medium';
+    let energyLevel = 'medium';
+    let dueDateStr = null;
+
+    if (/(?:!critical|#critical)/i.test(title)) priority = 'critical';
+    else if (/(?:!high|#high|p1)/i.test(title)) priority = 'high';
+    else if (/(?:!low|#low|p3)/i.test(title)) priority = 'low';
+
+    if (/(?:high energy)/i.test(title)) energyLevel = 'high';
+    else if (/(?:low energy)/i.test(title)) energyLevel = 'low';
+
+    let category = autoCategorize(title);
+
+    const today = new Date();
+    if (/\btomorrow\b/i.test(title)) {
+        today.setDate(today.getDate() + 1);
+        today.setHours(12,0,0,0);
+        dueDateStr = today.toISOString();
+    } else if (/\btoday\b/i.test(title)) {
+        today.setHours(18,0,0,0);
+        dueDateStr = today.toISOString();
+    }
+
+    title = title.replace(/(?:!critical|#critical|!high|#high|p1|!low|#low|p3|high energy|low energy|tomorrow|today)/ig, '').trim();
+    title = title.replace(/\s+/g, ' ');
+
+    return { title: title || 'New Task', priority, category, energyLevel, dueDate: dueDateStr };
+}
+
+function autoCategorize(text) {
+    text = text.toLowerCase();
+    if (/(cook|buy|grocery|shop|order|milk|egg)/.test(text)) return 'shopping';
+    if (/(workout|run|gym|doctor|meditate|sleep)/.test(text)) return 'health';
+    if (/(email|report|meeting|client|presentation)/.test(text)) return 'work';
+    if (/(clean|wash|laundry|call)/.test(text)) return 'personal';
+    return 'general';
+}
+
+function checkDailyDigest() {
+    const lastDigest = localStorage.getItem('lastDigestDate');
+    const todayStr = new Date().toDateString();
+    if (lastDigest === todayStr) return;
+
+    const modal = document.getElementById('digest-modal');
+    const content = document.getElementById('digest-content');
+    if (!modal) return;
+
+    const active = allTasks.filter(t => !t.isCompleted);
+    const overdue = active.filter(t => isOverdue(t));
+    const highEnergy = active.filter(t => t.energyLevel === 'high');
+
+    content.innerHTML = `
+        <p>Good morning! You have <strong>${active.length} tasks</strong> remaining.</p>
+        ${overdue.length > 0 ? `<p style="color: var(--red);">⚠ ${overdue.length} tasks are overdue!</p>` : ''}
+        ${highEnergy.length > 0 ? `<p>You have ${highEnergy.length} high-energy tasks. Tackle them before noon!</p>` : ''}
+    `;
+
+    modal.classList.add('open');
+    document.getElementById('close-digest-btn').onclick = () => modal.classList.remove('open');
+    document.getElementById('ack-digest-btn').onclick = () => {
+        modal.classList.remove('open');
+        localStorage.setItem('lastDigestDate', todayStr);
+    };
+}
+
+// Call automations when fetchTasks completes successfully
+const originalUpdateAll = updateAll;
+updateAll = async function() {
+    originalUpdateAll();
+    
+    // Check Daily Digest
+    setTimeout(checkDailyDigest, 1000);
+    
+    // Auto-Reprioritize
+    const now = new Date();
+    const next24 = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    for (const t of allTasks) {
+        if (!t.isCompleted && t.priority === 'medium' && t.dueDate) {
+            const due = new Date(t.dueDate);
+            if (due < next24 && due > now) {
+                // Auto bump to high
+                await updateTask(t.id, { ...t, priority: 'high' });
+            }
+        }
+    }
+
+    // Weekly Retro Computation
+    computeWeeklyRetro();
+};
+
+function computeWeeklyRetro() {
+    const retroContent = document.getElementById('retro-content');
+    if (!retroContent) return;
+
+    const days = getLast7Days();
+    const startOfWeek = days[0];
+
+    const completedThisWeek = allTasks.filter(t => t.isCompleted && t.completedAt && new Date(t.completedAt) >= startOfWeek);
+    const chronicProcrastinators = allTasks.filter(t => !t.isCompleted && t.rescheduleCount >= 3);
+
+    retroContent.innerHTML = `
+        <div style="line-height: 1.6; color: var(--text-main);">
+            <h3 style="margin-bottom: 8px;">Weekly Snapshot</h3>
+            <p>✅ You completed <strong>${completedThisWeek.length} tasks</strong> in the last 7 days.</p>
+            ${chronicProcrastinators.length > 0 ? 
+                `<p style="margin-top: 10px; color: var(--red);">⚠ Warning: You have <strong>${chronicProcrastinators.length} tasks</strong> that have been rescheduled 3 or more times. Time to either do them or delete them!</p>` : 
+                `<p style="margin-top: 10px; color: var(--green);">🎉 Great job! No chronic procrastination detected this week.</p>`
+            }
+        </div>
+    `;
 }

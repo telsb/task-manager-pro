@@ -32,25 +32,25 @@
         </div>
 
         <nav class="sidebar-nav">
-            <a href="#" class="nav-item active" data-view="dashboard" id="nav-dashboard">
+            <a href="#" class="nav-item active" data-view="dashboard" id="nav-dashboard" data-tooltip="Dashboard">
                 <i data-lucide="layout-dashboard"></i>
                 <span>Dashboard</span>
             </a>
-            <a href="#" class="nav-item" data-view="all" id="nav-all">
+            <a href="#" class="nav-item" data-view="all" id="nav-all" data-tooltip="All Tasks">
                 <i data-lucide="list-checks"></i>
                 <span>All Tasks</span>
                 <span class="nav-badge" id="badge-all">0</span>
             </a>
-            <a href="#" class="nav-item" data-view="active" id="nav-active">
+            <a href="#" class="nav-item" data-view="active" id="nav-active" data-tooltip="Active">
                 <i data-lucide="clock"></i>
                 <span>Active</span>
                 <span class="nav-badge" id="badge-active">0</span>
             </a>
-            <a href="#" class="nav-item" data-view="completed" id="nav-completed">
+            <a href="#" class="nav-item" data-view="completed" id="nav-completed" data-tooltip="Completed">
                 <i data-lucide="circle-check-big"></i>
                 <span>Completed</span>
             </a>
-            <a href="#" class="nav-item" data-view="overdue" id="nav-overdue">
+            <a href="#" class="nav-item" data-view="overdue" id="nav-overdue" data-tooltip="Overdue">
                 <i data-lucide="triangle-alert"></i>
                 <span>Overdue</span>
                 <span class="nav-badge danger" id="badge-overdue">0</span>
@@ -59,19 +59,19 @@
 
         <div class="sidebar-categories">
             <p class="sidebar-section-label">Categories</p>
-            <a href="#" class="nav-item cat-item" data-category="general">
+            <a href="#" class="nav-item cat-item" data-category="general" data-tooltip="General">
                 <span class="cat-dot" style="background:#3d9c94"></span><span>General</span>
             </a>
-            <a href="#" class="nav-item cat-item" data-category="work">
+            <a href="#" class="nav-item cat-item" data-category="work" data-tooltip="Work">
                 <span class="cat-dot" style="background:#5c6bc0"></span><span>Work</span>
             </a>
-            <a href="#" class="nav-item cat-item" data-category="personal">
+            <a href="#" class="nav-item cat-item" data-category="personal" data-tooltip="Personal">
                 <span class="cat-dot" style="background:#e67e22"></span><span>Personal</span>
             </a>
-            <a href="#" class="nav-item cat-item" data-category="shopping">
+            <a href="#" class="nav-item cat-item" data-category="shopping" data-tooltip="Shopping">
                 <span class="cat-dot" style="background:#e91e8c"></span><span>Shopping</span>
             </a>
-            <a href="#" class="nav-item cat-item" data-category="health">
+            <a href="#" class="nav-item cat-item" data-category="health" data-tooltip="Health">
                 <span class="cat-dot" style="background:#38a169"></span><span>Health</span>
             </a>
         </div>
@@ -83,6 +83,11 @@
                 <span class="user-sub">Personal</span>
             </div>
         </div>
+
+        <!-- Collapse toggle -->
+        <button class="sidebar-collapse-btn" id="sidebar-collapse-btn" aria-label="Toggle sidebar width" data-tooltip-right="Expand sidebar">
+            <i data-lucide="chevrons-left" id="collapse-icon"></i>
+        </button>
     </aside>
 
     <!-- ═══════════════ MAIN CONTENT ═══════════════ -->
@@ -108,6 +113,10 @@
                     <i data-lucide="calendar-days"></i>
                     <span id="header-date-text"></span>
                 </div>
+                <button class="btn-kbd" id="cmd-palette-btn" aria-label="Open command palette" title="Command Palette (Ctrl+K)">
+                    <i data-lucide="command"></i>
+                    <kbd>K</kbd>
+                </button>
                 <button class="btn-primary add-task-btn" id="open-modal-btn" aria-label="Add new task">
                     <i data-lucide="plus"></i>
                     <span>New Task</span>
@@ -124,54 +133,30 @@
         <!-- ─── DASHBOARD VIEW ─── -->
         <div class="view active" id="view-dashboard">
 
-            <!-- KPI STAT CARDS -->
-            <div class="kpi-grid">
-                <div class="kpi-card" id="kpi-total">
-                    <div class="kpi-top">
-                        <div class="kpi-label">TOTAL TASKS</div>
-                        <div class="kpi-icon teal"><i data-lucide="clipboard-list"></i></div>
-                    </div>
-                    <div class="kpi-value" id="kpi-total-val">0</div>
-                    <div class="kpi-sub">All created tasks</div>
-                    <div class="kpi-delta positive" id="kpi-total-delta">
-                        <i data-lucide="trending-up"></i> <span>–</span>
-                    </div>
+            <!-- STATS STRIP -->
+            <div class="stats-strip compact-stats">
+                <div class="stat-item" data-view="all" id="stat-total" role="button" tabindex="0" aria-label="Total tasks">
+                    <span class="stat-label">Total</span>
+                    <span class="stat-value" id="kpi-total-val">0</span>
+                    <svg class="sparkline" id="spark-total" viewBox="0 0 60 24" preserveAspectRatio="none"></svg>
                 </div>
-
-                <div class="kpi-card" id="kpi-completed">
-                    <div class="kpi-top">
-                        <div class="kpi-label">COMPLETED</div>
-                        <div class="kpi-icon green"><i data-lucide="circle-check-big"></i></div>
-                    </div>
-                    <div class="kpi-value" id="kpi-completed-val">0</div>
-                    <div class="kpi-sub">Tasks finished</div>
-                    <div class="kpi-delta positive" id="kpi-completed-delta">
-                        <i data-lucide="trending-up"></i> <span>–</span>
-                    </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item" data-view="completed" id="stat-completed" role="button" tabindex="0" aria-label="Completed tasks">
+                    <span class="stat-label">Done</span>
+                    <span class="stat-value" id="kpi-completed-val">0</span>
+                    <svg class="sparkline" id="spark-completed" viewBox="0 0 60 24" preserveAspectRatio="none"></svg>
                 </div>
-
-                <div class="kpi-card" id="kpi-active">
-                    <div class="kpi-top">
-                        <div class="kpi-label">ACTIVE</div>
-                        <div class="kpi-icon blue"><i data-lucide="clock"></i></div>
-                    </div>
-                    <div class="kpi-value" id="kpi-active-val">0</div>
-                    <div class="kpi-sub">In progress</div>
-                    <div class="kpi-delta neutral" id="kpi-active-delta">
-                        <i data-lucide="minus"></i> <span>–</span>
-                    </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item" data-view="active" id="stat-active" role="button" tabindex="0" aria-label="Active tasks">
+                    <span class="stat-label">Active</span>
+                    <span class="stat-value" id="kpi-active-val">0</span>
+                    <svg class="sparkline" id="spark-active" viewBox="0 0 60 24" preserveAspectRatio="none"></svg>
                 </div>
-
-                <div class="kpi-card" id="kpi-overdue">
-                    <div class="kpi-top">
-                        <div class="kpi-label">OVERDUE</div>
-                        <div class="kpi-icon red"><i data-lucide="triangle-alert"></i></div>
-                    </div>
-                    <div class="kpi-value" id="kpi-overdue-val">0</div>
-                    <div class="kpi-sub">Past due date</div>
-                    <div class="kpi-delta negative" id="kpi-overdue-delta">
-                        <i data-lucide="trending-down"></i> <span>–</span>
-                    </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item" data-view="overdue" id="stat-overdue" role="button" tabindex="0" aria-label="Overdue tasks">
+                    <span class="stat-label">Overdue</span>
+                    <span class="stat-value" id="kpi-overdue-val">0</span>
+                    <svg class="sparkline" id="spark-overdue" viewBox="0 0 60 24" preserveAspectRatio="none"></svg>
                 </div>
             </div>
 
@@ -194,14 +179,22 @@
                     </div>
                 </div>
 
-                <!-- Side metrics -->
-                <div class="side-metrics">
-                    <!-- Completion Ring -->
-                    <div class="card ring-card">
-                        <div class="card-header">
-                            <h2 class="card-title">Completion Rate</h2>
-                            <p class="card-subtitle">Tasks done vs total</p>
-                        </div>
+                <!-- Tabbed Metrics Card -->
+                <div class="card tabs-card" id="metrics-card">
+                    <div class="tabs-header">
+                        <button class="tab-btn active" data-tab="completion" id="tab-btn-completion">
+                            <i data-lucide="pie-chart"></i><span>Rate</span>
+                        </button>
+                        <button class="tab-btn" data-tab="priority" id="tab-btn-priority">
+                            <i data-lucide="bar-chart-2"></i><span>Priority</span>
+                        </button>
+                        <button class="tab-btn" data-tab="retro" id="tab-btn-retro">
+                            <i data-lucide="calendar-range"></i><span>Week</span>
+                        </button>
+                        <div class="tab-indicator" id="tab-indicator"></div>
+                    </div>
+
+                    <div class="tab-content active" id="tab-completion">
                         <div class="ring-container">
                             <canvas id="completionRing"></canvas>
                             <div class="ring-center-text">
@@ -209,24 +202,42 @@
                                 <span class="ring-label-text">Done</span>
                             </div>
                         </div>
+                        <p class="tab-sub" id="completion-sub">No tasks yet</p>
                     </div>
 
-                    <!-- Priority Breakdown -->
-                    <div class="card priority-card">
-                        <div class="card-header">
-                            <h2 class="card-title">Priority Breakdown</h2>
-                        </div>
+                    <div class="tab-content" id="tab-priority">
                         <div class="priority-bars" id="priority-bars"></div>
+                    </div>
+
+                    <div class="tab-content" id="tab-retro">
+                        <div class="retro-content" id="retro-content">
+                            <div class="retro-loading">Computing your week…</div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- RECENT TASKS (dashboard) -->
+            <!-- QUICK-ADD + RECENT TASKS -->
             <div class="card recent-card">
                 <div class="card-header">
                     <h2 class="card-title">Recent Tasks</h2>
                     <a href="#" class="see-all-link" data-view="all">See all →</a>
                 </div>
+
+                <!-- Inline Quick-Add -->
+                <form class="quick-add-row" id="quick-add-form" autocomplete="off">
+                    <i data-lucide="zap" class="quick-add-icon"></i>
+                    <div class="quick-add-inner">
+                        <input type="text" id="quick-add-input"
+                            placeholder='Quick add — try "buy milk tomorrow #shopping high"'
+                            autocomplete="off" spellcheck="false">
+                        <div class="quick-add-preview" id="quick-add-preview" style="display:none"></div>
+                    </div>
+                    <button type="submit" class="quick-add-btn" aria-label="Add task">
+                        <i data-lucide="send"></i>
+                    </button>
+                </form>
+
                 <ul class="task-list" id="recent-task-list"></ul>
             </div>
         </div>
@@ -260,6 +271,9 @@
                         </select>
                         <button class="btn-danger-outline" id="bulk-delete-btn" style="display:none">
                             <i data-lucide="trash-2"></i> Delete Selected
+                        </button>
+                        <button class="density-toggle" id="density-toggle" title="Toggle row density" aria-label="Toggle density">
+                            <i data-lucide="align-justify" id="density-icon"></i>
                         </button>
                     </div>
                 </div>
@@ -310,6 +324,18 @@
 
     </div><!-- /.main-wrapper -->
 
+    <!-- ═══════════════ COMMAND PALETTE ═══════════════ -->
+    <div class="cmd-overlay" id="command-palette" role="dialog" aria-modal="true" aria-label="Command palette">
+        <div class="cmd-card">
+            <div class="cmd-input-row">
+                <i data-lucide="search" class="cmd-search-icon"></i>
+                <input type="text" id="cmd-input" placeholder="Search tasks, go to view, or add…" autocomplete="off" spellcheck="false">
+                <span class="cmd-esc-hint">ESC</span>
+            </div>
+            <ul class="cmd-results" id="cmd-results" role="listbox"></ul>
+        </div>
+    </div>
+
     <!-- ═══════════════ ADD / EDIT TASK MODAL ═══════════════ -->
     <div class="modal-overlay" id="task-modal" aria-modal="true" role="dialog">
         <div class="modal-card">
@@ -325,6 +351,7 @@
                 <div class="form-group">
                     <label for="task-title">Task Title <span class="required">*</span></label>
                     <input type="text" id="task-title" placeholder="What needs to be done?" required autocomplete="off">
+                    <div class="auto-cat-hint" id="auto-cat-hint"></div>
                 </div>
 
                 <div class="form-group">
@@ -384,6 +411,22 @@
                 <button class="btn-danger" id="confirm-delete-btn">
                     <i data-lucide="trash-2"></i> Delete
                 </button>
+            </div>
+        </div>
+    <!-- ═══════════════ DAILY DIGEST MODAL ═══════════════ -->
+    <div class="modal-overlay" id="digest-modal" aria-modal="true" role="dialog">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2>🌅 Morning Digest</h2>
+                <button class="modal-close" id="close-digest-btn" aria-label="Close">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div id="digest-content" style="padding: 10px 0; line-height: 1.6; color: var(--text-main);">
+                <!-- Digest injected here -->
+            </div>
+            <div class="modal-actions">
+                <button class="btn-primary" id="ack-digest-btn" style="width: 100%;">Let's Go!</button>
             </div>
         </div>
     </div>
