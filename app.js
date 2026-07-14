@@ -150,22 +150,31 @@ function switchView(viewName) {
 ═══════════════════════════════════════════ */
 async function fetchTasks() {
     const loader = document.getElementById('loading-indicator');
-    const timer = setTimeout(() => loader.classList.remove('hidden'), 1500);
+
+    // Show waking-up message immediately — Render free tier cold starts can take 60–90s
+    loader.textContent = '⏳ Waking up server… (this may take ~30s on first load)';
+    loader.classList.remove('hidden');
 
     try {
-        const resp = await fetch(API_URL);
-        allTasks = await resp.json();
-        // Normalize field names (C# PascalCase → camelCase already works via JSON but guard both)
-        allTasks = allTasks.map(normalizeTask);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 90000); // 90s timeout
+
+        const resp = await fetch(API_URL, { signal: controller.signal });
+        clearTimeout(timeout);
+
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+        allTasks = (await resp.json()).map(normalizeTask);
+        loader.classList.add('hidden');
         updateAll();
     } catch (err) {
+        if (err.name === 'AbortError') {
+            loader.textContent = '❌ Server took too long to respond. Retrying…';
+        } else {
+            loader.textContent = `⚠️ Could not connect to server — retrying in 8s… (${err.message})`;
+        }
         console.error('Error fetching tasks:', err);
-        loader.textContent = '⚠️ Could not connect to server. Retrying...';
-        loader.classList.remove('hidden');
-        setTimeout(fetchTasks, 5000);
-    } finally {
-        clearTimeout(timer);
-        loader.classList.add('hidden');
+        setTimeout(fetchTasks, 8000);
     }
 }
 
