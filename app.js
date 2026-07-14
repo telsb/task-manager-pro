@@ -940,18 +940,25 @@ async function fetchGroups() {
     try {
         const cached = localStorage.getItem('groupCache');
         if (cached && allGroups.length === 0) {
-            try { 
-                allGroups = JSON.parse(cached); 
-                renderGroups(); 
+            try {
+                allGroups = JSON.parse(cached);
+                renderGroups();
             } catch {}
         }
-        
+
         const res = await fetch(`${API_BASE}/groups`, { headers: { 'X-Session-Token': currentUser.token } });
-        if (!res.ok) return;
+        if (!res.ok) {
+            // API failed — still update the dash list so it doesn't stay on "Loading..."
+            updateDashGroupsList();
+            return;
+        }
         allGroups = await res.json();
         localStorage.setItem('groupCache', JSON.stringify(allGroups));
-        renderGroups(); // Re-render to update UI with latest data from DB
-    } catch {}
+        renderGroups();
+    } catch {
+        // Network error — still clear loading state
+        updateDashGroupsList();
+    }
 }
 
 function renderGroups() {
@@ -1025,7 +1032,8 @@ function renderGroups() {
             });
         }
     }
-
+    // Also update the dashboard mini-list
+    updateDashGroupsList();
     lucide.createIcons();
 }
 
@@ -1035,6 +1043,34 @@ async function deleteGroup(id) {
         await fetch(`${API_BASE}/groups/${id}`, { method: 'DELETE', headers: { 'X-Session-Token': currentUser.token } });
         await fetchGroups();
     } catch {}
+}
+
+/* Update only the dashboard groups mini-list (can be called standalone) */
+function updateDashGroupsList() {
+    const dashList = document.getElementById('dash-groups-list');
+    if (!dashList) return;
+    if (!allGroups.length) {
+        dashList.innerHTML = `<div style="color:var(--text-muted);font-size:0.85rem;padding:8px 0;">No groups yet${currentUser.role === 'admin' ? '. Click "New Group" to create one.' : '. Ask an admin to invite you.'}</div>`;
+    } else {
+        dashList.innerHTML = allGroups.slice(0, 4).map(g => `
+            <div class="dash-group-item" data-id="${g.id}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);background:var(--bg);cursor:pointer;transition:background var(--trans);border:1px solid transparent;">
+                <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg, var(--teal), var(--blue));color:#fff;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;flex-shrink:0;">
+                    ${g.name.charAt(0).toUpperCase()}
+                </div>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-size:0.88rem;font-weight:600;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(g.name)}</div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px;">${g.memberCount} member${g.memberCount !== 1 ? 's' : ''}</div>
+                </div>
+                <div style="color:var(--teal);opacity:0.7;"><i data-lucide="message-square" style="width:18px;height:18px;"></i></div>
+            </div>
+        `).join('');
+        dashList.querySelectorAll('.dash-group-item').forEach(el => {
+            el.addEventListener('mouseover', () => el.style.borderColor = 'var(--border)');
+            el.addEventListener('mouseout',  () => el.style.borderColor = 'transparent');
+            el.addEventListener('click',     () => openChatPopout(parseInt(el.dataset.id)));
+        });
+        lucide.createIcons();
+    }
 }
 
 /* Helper — not needed for group creation modal but kept for safety */
@@ -1340,7 +1376,7 @@ function initChatPopout() {
         if (!body || !chatPopoutGroupId) return;
         input.value = '';
         try {
-            await fetch(`${API_BASE}/groups/${chatPopoutGroupId}/messages`, {
+            await fetch(`${API_BASE}/chat/${chatPopoutGroupId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-Session-Token': currentUser.token },
                 body: JSON.stringify({ body })
@@ -1383,7 +1419,7 @@ function closeChatPopout() {
 async function loadChatMessages() {
     if (!chatPopoutGroupId) return;
     try {
-        const res = await fetch(`${API_BASE}/groups/${chatPopoutGroupId}/messages`, {
+        const res = await fetch(`${API_BASE}/chat/${chatPopoutGroupId}`, {
             headers: { 'X-Session-Token': currentUser.token }
         });
         if (!res.ok) return;
