@@ -28,7 +28,12 @@
                 
                 <div class="form-group">
                     <label for="name">Full Name</label>
-                    <input type="text" id="name" required autocomplete="name" autofocus placeholder="e.g. John Doe">
+                    <input type="text" id="name" required autocomplete="name" autofocus placeholder="Your full name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="employee-id">Employee ID <span style="font-weight:400;color:var(--text-light);">(optional)</span></label>
+                    <input type="text" id="employee-id" autocomplete="off" placeholder="e.g. EMP-001">
                 </div>
                 
                 <div class="form-group">
@@ -69,6 +74,7 @@
             const name = document.getElementById('name').value.trim();
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
+            const employeeId = document.getElementById('employee-id').value.trim();
 
             errorEl.classList.add('hidden');
             btn.innerHTML = '<span>Creating Account...</span><i data-lucide="loader-2" class="spin"></i>';
@@ -80,7 +86,7 @@
                 const res = await fetch(API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, username, password })
+                    body: JSON.stringify({ name, username, password, employeeId })
                 });
 
                 if (!res.ok) {

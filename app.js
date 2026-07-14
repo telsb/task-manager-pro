@@ -406,6 +406,8 @@ function initUserModal() {
         document.getElementById('user-password').value = '';
         document.getElementById('user-password').required = false;
         document.getElementById('user-pw-req').style.display = 'none';
+        const empIdEl = document.getElementById('user-employee-id');
+        if (empIdEl) empIdEl.value = user.employeeId || '';
         modal.classList.add('open');
     };
 
@@ -415,12 +417,14 @@ function initUserModal() {
 
     form.addEventListener('submit', async e => {
         e.preventDefault();
+        const empIdEl = document.getElementById('user-employee-id');
         const payload = {
             id: editingUserId,
             name: document.getElementById('user-name').value.trim(),
             username: document.getElementById('user-username').value.trim(),
             role: document.getElementById('user-role').value,
-            password: document.getElementById('user-password').value
+            password: document.getElementById('user-password').value,
+            employeeId: empIdEl ? empIdEl.value.trim() : ''
         };
         const success = await saveUser(payload);
         if (success) closeModal();
@@ -584,6 +588,7 @@ function renderUsers() {
                 <div class="uc-info">
                     <div class="uc-name">${escapeHtml(u.name)}</div>
                     <div class="uc-username">@${escapeHtml(u.username)}</div>
+                    ${u.employeeId ? `<div class="uc-empid"><i data-lucide="id-card" style="width:12px;height:12px;vertical-align:middle;margin-right:3px;"></i>${escapeHtml(u.employeeId)}</div>` : ''}
                 </div>
             </div>
             <div class="uc-meta">

@@ -850,6 +850,7 @@ body[data-role="user"] .admin-only { display: none !important; }
 .uc-info { flex: 1; min-width: 0; }
 .uc-name { font-size: 0.95rem; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .uc-username { font-size: 0.8rem; color: var(--text-muted); }
+.uc-empid { font-size: 0.75rem; color: var(--text-light); margin-top: 2px; display: flex; align-items: center; gap: 3px; }
 
 .uc-meta { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; font-weight: 600; margin-top: 4px; }
 .uc-role { padding: 2px 8px; border-radius: 4px; background: var(--bg); color: var(--text-muted); }
