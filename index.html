@@ -4,23 +4,388 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloud Task Manager</title>
+    <title>TaskFlow Pro — Dashboard</title>
+    <meta name="description" content="TaskFlow Pro — A premium task management dashboard to organize, prioritize, and track your productivity.">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <div class="container">
-        <h1>Task Manager</h1>
+    <!-- ═══════════════ SIDEBAR ═══════════════ -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo">
+            <div class="logo-icon">
+                <i data-lucide="check-square"></i>
+            </div>
+            <span class="logo-text">TaskFlow</span>
+        </div>
 
-        <form id="task-form">
-            <input type="text" id="task-title" placeholder="What needs to be done?" required />
-            <input type="text" id="task-desc" placeholder="Description (optional)" />
-            <button type="submit">Add Task</button>
-        </form>
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-item active" data-view="dashboard" id="nav-dashboard">
+                <i data-lucide="layout-dashboard"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="#" class="nav-item" data-view="all" id="nav-all">
+                <i data-lucide="list-checks"></i>
+                <span>All Tasks</span>
+                <span class="nav-badge" id="badge-all">0</span>
+            </a>
+            <a href="#" class="nav-item" data-view="active" id="nav-active">
+                <i data-lucide="clock"></i>
+                <span>Active</span>
+                <span class="nav-badge" id="badge-active">0</span>
+            </a>
+            <a href="#" class="nav-item" data-view="completed" id="nav-completed">
+                <i data-lucide="circle-check-big"></i>
+                <span>Completed</span>
+            </a>
+            <a href="#" class="nav-item" data-view="overdue" id="nav-overdue">
+                <i data-lucide="triangle-alert"></i>
+                <span>Overdue</span>
+                <span class="nav-badge danger" id="badge-overdue">0</span>
+            </a>
+        </nav>
 
-        <div id="loading-indicator" class="hidden">Waking up cloud server... Please wait...</div>
+        <div class="sidebar-categories">
+            <p class="sidebar-section-label">Categories</p>
+            <a href="#" class="nav-item cat-item" data-category="general">
+                <span class="cat-dot" style="background:#3d9c94"></span><span>General</span>
+            </a>
+            <a href="#" class="nav-item cat-item" data-category="work">
+                <span class="cat-dot" style="background:#5c6bc0"></span><span>Work</span>
+            </a>
+            <a href="#" class="nav-item cat-item" data-category="personal">
+                <span class="cat-dot" style="background:#e67e22"></span><span>Personal</span>
+            </a>
+            <a href="#" class="nav-item cat-item" data-category="shopping">
+                <span class="cat-dot" style="background:#e91e8c"></span><span>Shopping</span>
+            </a>
+            <a href="#" class="nav-item cat-item" data-category="health">
+                <span class="cat-dot" style="background:#38a169"></span><span>Health</span>
+            </a>
+        </div>
 
-        <ul id="task-list"></ul>
+        <div class="sidebar-footer">
+            <div class="user-avatar">AT</div>
+            <div class="user-info">
+                <span class="user-name">My Workspace</span>
+                <span class="user-sub">Personal</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ═══════════════ MAIN CONTENT ═══════════════ -->
+    <div class="main-wrapper">
+
+        <!-- HEADER -->
+        <header class="top-header">
+            <div class="header-left">
+                <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar">
+                    <i data-lucide="menu"></i>
+                </button>
+                <div class="header-title-block">
+                    <h1 id="page-title">Dashboard</h1>
+                    <span id="page-subtitle">Track and manage your tasks</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="search-bar">
+                    <i data-lucide="search"></i>
+                    <input type="text" id="search-input" placeholder="Search tasks..." autocomplete="off">
+                </div>
+                <div class="header-date">
+                    <i data-lucide="calendar-days"></i>
+                    <span id="header-date-text"></span>
+                </div>
+                <button class="btn-primary add-task-btn" id="open-modal-btn" aria-label="Add new task">
+                    <i data-lucide="plus"></i>
+                    <span>New Task</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- LOADING BANNER -->
+        <div id="loading-indicator" class="loading-banner hidden">
+            <i data-lucide="wifi"></i>
+            <span>Connecting to cloud server... Please wait...</span>
+        </div>
+
+        <!-- ─── DASHBOARD VIEW ─── -->
+        <div class="view active" id="view-dashboard">
+
+            <!-- KPI STAT CARDS -->
+            <div class="kpi-grid">
+                <div class="kpi-card" id="kpi-total">
+                    <div class="kpi-top">
+                        <div class="kpi-label">TOTAL TASKS</div>
+                        <div class="kpi-icon teal"><i data-lucide="clipboard-list"></i></div>
+                    </div>
+                    <div class="kpi-value" id="kpi-total-val">0</div>
+                    <div class="kpi-sub">All created tasks</div>
+                    <div class="kpi-delta positive" id="kpi-total-delta">
+                        <i data-lucide="trending-up"></i> <span>–</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card" id="kpi-completed">
+                    <div class="kpi-top">
+                        <div class="kpi-label">COMPLETED</div>
+                        <div class="kpi-icon green"><i data-lucide="circle-check-big"></i></div>
+                    </div>
+                    <div class="kpi-value" id="kpi-completed-val">0</div>
+                    <div class="kpi-sub">Tasks finished</div>
+                    <div class="kpi-delta positive" id="kpi-completed-delta">
+                        <i data-lucide="trending-up"></i> <span>–</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card" id="kpi-active">
+                    <div class="kpi-top">
+                        <div class="kpi-label">ACTIVE</div>
+                        <div class="kpi-icon blue"><i data-lucide="clock"></i></div>
+                    </div>
+                    <div class="kpi-value" id="kpi-active-val">0</div>
+                    <div class="kpi-sub">In progress</div>
+                    <div class="kpi-delta neutral" id="kpi-active-delta">
+                        <i data-lucide="minus"></i> <span>–</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card" id="kpi-overdue">
+                    <div class="kpi-top">
+                        <div class="kpi-label">OVERDUE</div>
+                        <div class="kpi-icon red"><i data-lucide="triangle-alert"></i></div>
+                    </div>
+                    <div class="kpi-value" id="kpi-overdue-val">0</div>
+                    <div class="kpi-sub">Past due date</div>
+                    <div class="kpi-delta negative" id="kpi-overdue-delta">
+                        <i data-lucide="trending-down"></i> <span>–</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHARTS ROW -->
+            <div class="charts-row">
+                <!-- Activity Chart -->
+                <div class="card chart-card" id="activity-card">
+                    <div class="card-header">
+                        <div>
+                            <h2 class="card-title">Task Activity (Last 7 Days)</h2>
+                            <p class="card-subtitle">Daily tasks created vs completed</p>
+                        </div>
+                        <div class="chart-legend">
+                            <span class="legend-dot" style="background:#3d9c94"></span> Created
+                            <span class="legend-dot" style="background:#5c6bc0; margin-left:12px"></span> Completed
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="activityChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Side metrics -->
+                <div class="side-metrics">
+                    <!-- Completion Ring -->
+                    <div class="card ring-card">
+                        <div class="card-header">
+                            <h2 class="card-title">Completion Rate</h2>
+                            <p class="card-subtitle">Tasks done vs total</p>
+                        </div>
+                        <div class="ring-container">
+                            <canvas id="completionRing"></canvas>
+                            <div class="ring-center-text">
+                                <span class="ring-pct" id="ring-pct-text">0%</span>
+                                <span class="ring-label-text">Done</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Priority Breakdown -->
+                    <div class="card priority-card">
+                        <div class="card-header">
+                            <h2 class="card-title">Priority Breakdown</h2>
+                        </div>
+                        <div class="priority-bars" id="priority-bars"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RECENT TASKS (dashboard) -->
+            <div class="card recent-card">
+                <div class="card-header">
+                    <h2 class="card-title">Recent Tasks</h2>
+                    <a href="#" class="see-all-link" data-view="all">See all →</a>
+                </div>
+                <ul class="task-list" id="recent-task-list"></ul>
+            </div>
+        </div>
+
+        <!-- ─── ALL TASKS VIEW ─── -->
+        <div class="view" id="view-all">
+            <div class="card tasks-panel">
+                <div class="tasks-panel-header">
+                    <div class="filter-row">
+                        <select id="filter-priority" class="filter-select" aria-label="Filter by priority">
+                            <option value="">All Priorities</option>
+                            <option value="critical">Critical</option>
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                        </select>
+                        <select id="filter-category" class="filter-select" aria-label="Filter by category">
+                            <option value="">All Categories</option>
+                            <option value="general">General</option>
+                            <option value="work">Work</option>
+                            <option value="personal">Personal</option>
+                            <option value="shopping">Shopping</option>
+                            <option value="health">Health</option>
+                        </select>
+                        <select id="sort-by" class="filter-select" aria-label="Sort tasks">
+                            <option value="newest">Newest First</option>
+                            <option value="oldest">Oldest First</option>
+                            <option value="due">Due Date</option>
+                            <option value="priority">Priority</option>
+                            <option value="alpha">Alphabetical</option>
+                        </select>
+                        <button class="btn-danger-outline" id="bulk-delete-btn" style="display:none">
+                            <i data-lucide="trash-2"></i> Delete Selected
+                        </button>
+                    </div>
+                </div>
+                <ul class="task-list full-list" id="all-task-list"></ul>
+                <div class="empty-state" id="all-empty" style="display:none">
+                    <i data-lucide="inbox"></i>
+                    <p>No tasks found</p>
+                    <span>Add a new task using the "New Task" button</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─── ACTIVE VIEW ─── -->
+        <div class="view" id="view-active">
+            <div class="card tasks-panel">
+                <ul class="task-list full-list" id="active-task-list"></ul>
+                <div class="empty-state" id="active-empty" style="display:none">
+                    <i data-lucide="party-popper"></i>
+                    <p>All caught up!</p>
+                    <span>No active tasks remaining</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─── COMPLETED VIEW ─── -->
+        <div class="view" id="view-completed">
+            <div class="card tasks-panel">
+                <ul class="task-list full-list" id="completed-task-list"></ul>
+                <div class="empty-state" id="completed-empty" style="display:none">
+                    <i data-lucide="circle-check-big"></i>
+                    <p>No completed tasks yet</p>
+                    <span>Mark tasks as done to see them here</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─── OVERDUE VIEW ─── -->
+        <div class="view" id="view-overdue">
+            <div class="card tasks-panel">
+                <ul class="task-list full-list" id="overdue-task-list"></ul>
+                <div class="empty-state" id="overdue-empty" style="display:none">
+                    <i data-lucide="shield-check"></i>
+                    <p>No overdue tasks!</p>
+                    <span>You're on top of everything 🎉</span>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /.main-wrapper -->
+
+    <!-- ═══════════════ ADD / EDIT TASK MODAL ═══════════════ -->
+    <div class="modal-overlay" id="task-modal" aria-modal="true" role="dialog">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2 id="modal-title">New Task</h2>
+                <button class="modal-close" id="close-modal-btn" aria-label="Close modal">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <form id="task-form" class="modal-form">
+                <input type="hidden" id="edit-task-id">
+
+                <div class="form-group">
+                    <label for="task-title">Task Title <span class="required">*</span></label>
+                    <input type="text" id="task-title" placeholder="What needs to be done?" required autocomplete="off">
+                </div>
+
+                <div class="form-group">
+                    <label for="task-desc">Description</label>
+                    <textarea id="task-desc" placeholder="Add details (optional)" rows="3"></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="task-priority">Priority</label>
+                        <select id="task-priority">
+                            <option value="low">🟢 Low</option>
+                            <option value="medium" selected>🟡 Medium</option>
+                            <option value="high">🟠 High</option>
+                            <option value="critical">🔴 Critical</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="task-category">Category</label>
+                        <select id="task-category">
+                            <option value="general">📌 General</option>
+                            <option value="work">💼 Work</option>
+                            <option value="personal">👤 Personal</option>
+                            <option value="shopping">🛒 Shopping</option>
+                            <option value="health">❤️ Health</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="task-due">Due Date</label>
+                    <input type="datetime-local" id="task-due">
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" id="cancel-modal-btn">Cancel</button>
+                    <button type="submit" class="btn-primary" id="save-task-btn">
+                        <i data-lucide="plus"></i> Add Task
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ═══════════════ CONFIRM DELETE MODAL ═══════════════ -->
+    <div class="modal-overlay" id="confirm-modal" aria-modal="true" role="dialog">
+        <div class="modal-card small">
+            <div class="modal-header">
+                <h2>Delete Task?</h2>
+                <button class="modal-close" id="close-confirm-btn" aria-label="Close">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <p class="confirm-text">This action cannot be undone. The task will be permanently removed.</p>
+            <div class="modal-actions">
+                <button class="btn-secondary" id="cancel-confirm-btn">Cancel</button>
+                <button class="btn-danger" id="confirm-delete-btn">
+                    <i data-lucide="trash-2"></i> Delete
+                </button>
+            </div>
+        </div>
     </div>
 
     <script src="app.js"></script>
