@@ -418,14 +418,17 @@ function initUserModal() {
     const modal = document.getElementById('user-modal');
     const form = document.getElementById('user-form');
     
-    document.getElementById('open-user-modal-btn').addEventListener('click', () => {
+    const openNewUserModal = () => {
         editingUserId = null;
         document.getElementById('user-modal-title').textContent = 'New User';
         form.reset();
         document.getElementById('user-pw-req').style.display = 'inline';
         document.getElementById('user-password').required = true;
         modal.classList.add('open');
-    });
+    };
+
+    document.getElementById('open-user-modal-btn')?.addEventListener('click', openNewUserModal);
+    document.getElementById('open-add-user-btn')?.addEventListener('click', openNewUserModal);
 
     window._openEditUserModal = (user) => {
         editingUserId = user.id;
@@ -978,6 +981,9 @@ async function deleteGroup(id) {
     } catch {}
 }
 
+/* Helper — not needed for group creation modal but kept for safety */
+function renderGroupUserList() {}
+
 function initNewGroupModal() {
     const modal = document.getElementById('new-group-modal');
     const form  = document.getElementById('new-group-form');
@@ -986,7 +992,6 @@ function initNewGroupModal() {
 
     const openModal = () => {
         form.reset();
-        renderGroupUserList();
         modal.classList.add('open');
     };
 

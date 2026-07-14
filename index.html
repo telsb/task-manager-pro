@@ -322,7 +322,7 @@
                             <button class="btn-primary admin-only" id="open-bulk-task-btn" style="font-size:0.8rem;padding:7px 14px;">
                                 <i data-lucide="send"></i> Bulk Send Task
                             </button>
-                            <button class="btn-primary admin-only" id="open-create-group-btn" style="font-size:0.8rem;padding:7px 14px;">
+                            <button class="btn-primary admin-only" id="open-new-group-btn" style="font-size:0.8rem;padding:7px 14px;">
                                 <i data-lucide="plus"></i> New Group
                             </button>
                         </div>
@@ -335,6 +335,21 @@
                         <span>Create a group to start collaborating</span>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- ─── USERS VIEW (ADMIN) ─── -->
+        <div class="view" id="view-users">
+            <div class="card tasks-panel">
+                <div class="tasks-panel-header">
+                    <div class="filter-row" style="justify-content:space-between;align-items:center;">
+                        <span style="font-weight:600;color:var(--text-main);">User Management</span>
+                        <button class="btn-primary" id="open-add-user-btn" style="font-size:0.8rem;padding:7px 14px;">
+                            <i data-lucide="user-plus"></i> Add User
+                        </button>
+                    </div>
+                </div>
+                <div class="users-grid" id="users-grid"></div>
             </div>
         </div>
 
