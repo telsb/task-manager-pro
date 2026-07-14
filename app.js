@@ -2,7 +2,7 @@
    TASKFLOW PRO — APP LOGIC
    ═══════════════════════════════════════════ */
 
-const API_BASE = "https://task-manager-backend-vcm9.onrender.com/api";
+const API_BASE = "/api";
 
 /* ─── State ─── */
 let allTasks = [];
