@@ -44,6 +44,7 @@
                     <button class="header-nav-btn" data-view="active"><i data-lucide="clock"></i><span>Active</span><span class="nav-count" id="badge-active">0</span></button>
                     <button class="header-nav-btn" data-view="completed"><i data-lucide="circle-check-big"></i><span>Completed</span></button>
                     <button class="header-nav-btn" data-view="overdue"><i data-lucide="triangle-alert"></i><span>Overdue</span><span class="nav-count danger" id="badge-overdue">0</span></button>
+                    <button class="header-nav-btn admin-only" data-view="users"><i data-lucide="users"></i><span>Users</span></button>
                 </nav>
                 <div class="header-sep"></div>
                 <div class="live-clock" id="live-clock">--:--:--</div>
@@ -51,7 +52,16 @@
                     <i data-lucide="search"></i>
                     <input type="text" id="search-input" placeholder="Search tasks..." autocomplete="off">
                 </div>
-                <div class="header-date">
+                <div class="header-sep"></div>
+                <div class="user-profile">
+                    <div class="user-avatar" id="header-avatar">?</div>
+                    <div class="user-info">
+                        <span class="user-name" id="header-name">User</span>
+                        <span class="user-role" id="header-role">Role</span>
+                    </div>
+                    <button class="logout-btn" id="logout-btn" title="Logout"><i data-lucide="log-out"></i></button>
+                </div>
+                <div class="header-date hidden">
                     <i data-lucide="calendar-days"></i>
                     <span id="header-date-text"></span>
                 </div>
@@ -321,9 +331,17 @@
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="task-due">Due Date</label>
-                    <input type="datetime-local" id="task-due">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="task-due">Due Date</label>
+                        <input type="datetime-local" id="task-due">
+                    </div>
+                    <div class="form-group" id="assignee-group">
+                        <label for="task-assignee">Assign To</label>
+                        <select id="task-assignee">
+                            <option value="">Unassigned</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="modal-actions">
@@ -373,6 +391,42 @@
 
     <!-- Toast Notification Container -->
     <div id="toast-container"></div>
+
+    <!-- USER MODAL (ADMIN) -->
+    <div class="modal-overlay" id="user-modal">
+        <div class="modal-card small">
+            <div class="modal-header">
+                <h2 id="user-modal-title">New User</h2>
+                <button class="modal-close" id="close-user-modal-btn"><i data-lucide="x"></i></button>
+            </div>
+            <form id="user-form" class="modal-form">
+                <input type="hidden" id="edit-user-id">
+                <div class="form-group">
+                    <label for="user-name">Full Name <span class="required">*</span></label>
+                    <input type="text" id="user-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="user-username">Username <span class="required">*</span></label>
+                    <input type="text" id="user-username" required>
+                </div>
+                <div class="form-group">
+                    <label for="user-password">Password <span class="required" id="user-pw-req">*</span></label>
+                    <input type="password" id="user-password">
+                </div>
+                <div class="form-group">
+                    <label for="user-role">Role</label>
+                    <select id="user-role">
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" id="cancel-user-modal-btn">Cancel</button>
+                    <button type="submit" class="btn-primary" id="save-user-btn">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script src="app.js"></script>
 </body>
