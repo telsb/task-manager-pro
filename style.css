@@ -873,10 +873,20 @@ body[data-role="user"] .admin-only { display: none !important; }
 .badge-assignee svg { width: 11px; height: 11px; }
 
 /* ─────────────────────────────────────────
+   DASHBOARD BOTTOM ROW
+───────────────────────────────────────── */
+.dashboard-bottom-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 18px;
+}
+
+/* ─────────────────────────────────────────
    RESPONSIVE
 ───────────────────────────────────────── */
 @media (max-width: 900px) {
     .charts-row { grid-template-columns: 1fr; }
+    .dashboard-bottom-row { grid-template-columns: 1fr; }
     .header-nav { display: none; }
     .header-date { display: none; }
     .live-clock { display: none; }

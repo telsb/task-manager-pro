@@ -917,6 +917,33 @@ function renderGroups() {
     grid.querySelectorAll('.delete-group-btn').forEach(btn => {
         btn.addEventListener('click', () => deleteGroup(parseInt(btn.dataset.id)));
     });
+
+    const dashList = document.getElementById('dash-groups-list');
+    if (dashList) {
+        if (!allGroups.length) {
+            dashList.innerHTML = `<div style="color:var(--text-muted);font-size:0.85rem;padding:8px 0;">No groups yet.</div>`;
+        } else {
+            dashList.innerHTML = allGroups.slice(0, 4).map(g => `
+                <div class="dash-group-item" data-id="${g.id}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);background:var(--bg);cursor:pointer;transition:background var(--trans);border:1px solid transparent;">
+                    <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg, var(--teal), var(--blue));color:#fff;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;flex-shrink:0;">
+                        ${g.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-size:0.88rem;font-weight:600;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(g.name)}</div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px;">${g.memberCount} member${g.memberCount !== 1 ? 's' : ''}</div>
+                    </div>
+                    <div style="color:var(--teal);opacity:0.7;"><i data-lucide="message-square" style="width:18px;height:18px;"></i></div>
+                </div>
+            `).join('');
+            
+            dashList.querySelectorAll('.dash-group-item').forEach(el => {
+                el.addEventListener('mouseover', () => el.style.borderColor = 'var(--border)');
+                el.addEventListener('mouseout', () => el.style.borderColor = 'transparent');
+                el.addEventListener('click', () => window.location.href = `chat.html?group=${el.dataset.id}`);
+            });
+        }
+    }
+
     lucide.createIcons();
 }
 
@@ -1007,15 +1034,17 @@ function initBulkTaskModal() {
     const modal = document.getElementById('bulk-task-modal');
     const form  = document.getElementById('bulk-task-form');
     const openBtn = document.getElementById('open-bulk-task-btn');
+    const dashOpenBtn = document.getElementById('dash-bulk-task-btn');
 
-    if (!openBtn) return;
-
-    openBtn.addEventListener('click', () => {
+    const openModal = () => {
         form.reset();
         renderBulkUserList();
         renderBulkGroupPick();
         modal.classList.add('open');
-    });
+    };
+
+    if (openBtn) openBtn.addEventListener('click', openModal);
+    if (dashOpenBtn) dashOpenBtn.addEventListener('click', openModal);
 
     document.getElementById('close-bulk-task-btn')?.addEventListener('click', () => modal.classList.remove('open'));
     document.getElementById('cancel-bulk-task-btn')?.addEventListener('click', () => modal.classList.remove('open'));
