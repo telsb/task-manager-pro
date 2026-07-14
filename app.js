@@ -668,6 +668,37 @@ function openTaskDetailsModal(task) {
         editBtn.style.display = 'none';
     }
 
+    const completeBtn = document.getElementById('td-complete-btn');
+    const completeText = document.getElementById('td-complete-text');
+    
+    // Only assigned user or admin can complete it
+    if (currentUser.role === 'admin' || task.assignedToUserId === currentUser.id) {
+        completeBtn.style.display = 'flex';
+        if (task.isCompleted) {
+            completeText.textContent = 'Mark as Incomplete';
+            completeBtn.style.background = 'var(--gray-3)';
+            completeBtn.style.borderColor = 'var(--gray-3)';
+            completeBtn.style.color = 'var(--text-main)';
+        } else {
+            completeText.textContent = 'Mark as Completed';
+            completeBtn.style.background = 'var(--teal)';
+            completeBtn.style.borderColor = 'var(--teal)';
+            completeBtn.style.color = 'white';
+        }
+        
+        completeBtn.onclick = async () => {
+            await toggleTask(task);
+            modal.classList.remove('open');
+            // Re-open with updated task state by fetching fresh from allTasks array
+            setTimeout(() => {
+                const freshTask = allTasks.find(t => t.id === task.id);
+                if (freshTask) openTaskDetailsModal(freshTask);
+            }, 150);
+        };
+    } else {
+        completeBtn.style.display = 'none';
+    }
+
     modal.classList.add('open');
     lucide.createIcons();
 }
