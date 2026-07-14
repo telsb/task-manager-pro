@@ -646,7 +646,12 @@ function openTaskDetailsModal(task) {
     descEl.style.color = task.description ? 'var(--text-main)' : 'var(--text-muted)';
 
     document.getElementById('td-assignee').innerHTML = `<i data-lucide="user" style="width:16px;height:16px;color:var(--teal);"></i><span>${escapeHtml(task.assignedToName || 'Unassigned')}</span>`;
-    document.getElementById('td-creator').innerHTML = `<i data-lucide="shield" style="width:16px;height:16px;color:var(--text-muted);"></i><span>${escapeHtml(task.createdByName || 'Admin')}</span>`;
+    
+    let creatorName = task.createdByName;
+    if (!creatorName || creatorName.toLowerCase() === 'admin') {
+        creatorName = 'System Administrator';
+    }
+    document.getElementById('td-creator').innerHTML = `<i data-lucide="shield" style="width:16px;height:16px;color:var(--text-muted);"></i><span>${escapeHtml(creatorName)}</span>`;
 
     document.getElementById('td-created-at').textContent = new Date(task.createdAt).toLocaleString();
     const compWrap = document.getElementById('td-completed-wrap');
