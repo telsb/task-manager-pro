@@ -1340,13 +1340,26 @@ function renderNotifications() {
             const groupId = parseInt(btn.dataset.groupId);
             const action  = btn.dataset.action;
             try {
-                await fetch(`${API_BASE}/groups/${groupId}/respond`, {
+                const res = await fetch(`${API_BASE}/groups/${groupId}/respond`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Session-Token': currentUser.token },
                     body: JSON.stringify({ action, notificationId: notifId })
                 });
-                await fetchNotifications();
-                await fetchGroups();
+                if (res.ok) {
+                    // Clear the group cache so fresh data is loaded
+                    localStorage.removeItem('groupCache');
+                    allGroups = [];
+                    await fetchNotifications();
+                    await fetchGroups();
+                    if (action === 'accept') {
+                        // Show a quick toast
+                        const g = allGroups.find(g => g.id === groupId);
+                        const name = g ? g.name : 'the group';
+                        alert(`✅ You joined "${name}"! It's now in your dashboard.`);
+                    }
+                } else {
+                    await fetchNotifications();
+                }
             } catch {}
         });
     });
