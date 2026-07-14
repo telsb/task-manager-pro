@@ -420,15 +420,22 @@ ul { list-style: none; }
    LOADING BANNER
 ───────────────────────────────────────── */
 .loading-banner {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
     display: flex;
     align-items: center;
     gap: 10px;
     background: #fff8e1;
     color: #856404;
-    padding: 10px 28px;
+    padding: 12px 24px;
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow);
     font-size: 0.85rem;
-    font-weight: 500;
-    border-bottom: 1px solid #fde68a;
+    font-weight: 600;
+    border-left: 4px solid #fde68a;
+    pointer-events: none; /* Ensure it never blocks clicks */
 }
 
 .loading-banner svg { width: 16px; height: 16px; animation: pulse 1.5s ease-in-out infinite; }
