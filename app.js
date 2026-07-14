@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     await fetchGroups();
     initNotifications();
-    initGroupModals();
+    initNewGroupModal();
     initBulkTaskModal();
 });
 
@@ -182,10 +182,19 @@ async function fetchTasks() {
     loader.classList.remove('hidden');
 
     try {
+        const cached = localStorage.getItem('taskCache');
+        if (cached && allTasks.length === 0) {
+            try { 
+                allTasks = JSON.parse(cached); 
+                updateAll(); 
+            } catch {}
+        }
+        
         const resp = await fetch(`${API_BASE}/tasks`, { headers: { 'X-Session-Token': currentUser.token } });
         if (resp.status === 401) { localStorage.clear(); window.location.href = 'login.html'; return; }
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         allTasks = (await resp.json()).map(normalizeTask);
+        localStorage.setItem('taskCache', JSON.stringify(allTasks));
         loader.classList.add('hidden');
         updateAll();
     } catch (err) {
@@ -249,9 +258,19 @@ async function deleteTask(id) {
 async function fetchUsers() {
     if (currentUser.role !== 'admin') return;
     try {
+        const cached = localStorage.getItem('userCache');
+        if (cached && allUsers.length === 0) {
+            try { 
+                allUsers = JSON.parse(cached); 
+                populateAssigneeDropdown();
+                if (currentView === 'users') renderUsers();
+            } catch {}
+        }
+
         const resp = await fetch(`${API_BASE}/users`, { headers: { 'X-Session-Token': currentUser.token } });
         if (!resp.ok) throw new Error();
         allUsers = await resp.json();
+        localStorage.setItem('userCache', JSON.stringify(allUsers));
         populateAssigneeDropdown();
         if (currentView === 'users') renderUsers();
     } catch (err) { console.error('fetchUsers error:', err); }
@@ -865,10 +884,19 @@ let invitingGroupId = null;
 
 async function fetchGroups() {
     try {
+        const cached = localStorage.getItem('groupCache');
+        if (cached && allGroups.length === 0) {
+            try { 
+                allGroups = JSON.parse(cached); 
+                renderGroups(); 
+            } catch {}
+        }
+        
         const res = await fetch(`${API_BASE}/groups`, { headers: { 'X-Session-Token': currentUser.token } });
         if (!res.ok) return;
         allGroups = await res.json();
-        if (currentView === 'groups') renderGroups();
+        localStorage.setItem('groupCache', JSON.stringify(allGroups));
+        renderGroups(); // Re-render to update UI with latest data from DB
     } catch {}
 }
 
