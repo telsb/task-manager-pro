@@ -130,12 +130,19 @@
                 <div class="card chart-card" id="activity-card">
                     <div class="card-header">
                         <div>
-                            <h2 class="card-title">Task Activity (Last 7 Days)</h2>
+                            <h2 class="card-title" id="activity-chart-title">Task Activity (Last 7 Days)</h2>
                             <p class="card-subtitle">Daily tasks created vs completed</p>
                         </div>
-                        <div class="chart-legend">
-                            <span class="legend-dot" style="background:#3d9c94"></span> Created
-                            <span class="legend-dot" style="background:#5c6bc0; margin-left:12px"></span> Completed
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <div class="chart-legend">
+                                <span class="legend-dot" style="background:#3d9c94"></span> Created
+                                <span class="legend-dot" style="background:#5c6bc0; margin-left:12px"></span> Completed
+                            </div>
+                            <div class="activity-range-btns" id="activity-range-btns">
+                                <button class="range-btn active" data-range="7">7d</button>
+                                <button class="range-btn" data-range="14">14d</button>
+                                <button class="range-btn" data-range="30">30d</button>
+                            </div>
                         </div>
                     </div>
                     <div class="chart-container">
@@ -606,6 +613,32 @@
                 </div>
             </form>
         </div>
+    </div>
+
+    <!-- ═══════════════ CHAT POPOUT PANEL ═══════════════ -->
+    <div class="chat-popout-backdrop" id="chat-popout-backdrop"></div>
+    <div class="chat-popout" id="chat-popout">
+        <div class="chat-popout-header">
+            <div class="chat-popout-title">
+                <div class="chat-popout-avatar" id="chat-popout-avatar">G</div>
+                <div>
+                    <div class="chat-popout-name" id="chat-popout-name">Group Chat</div>
+                    <div class="chat-popout-sub" id="chat-popout-sub">Loading members...</div>
+                </div>
+            </div>
+            <button class="chat-popout-close" id="chat-popout-close" aria-label="Close chat">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="chat-popout-messages" id="chat-popout-messages">
+            <div class="chat-loading">Loading messages...</div>
+        </div>
+        <form class="chat-popout-input-row" id="chat-popout-form" autocomplete="off">
+            <input type="text" id="chat-popout-input" placeholder="Type a message..." autocomplete="off">
+            <button type="submit" class="chat-send-btn" aria-label="Send">
+                <i data-lucide="send"></i>
+            </button>
+        </form>
     </div>
 
     <script src="app.js"></script>

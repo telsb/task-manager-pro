@@ -66,6 +66,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     safeInit(initNotifications);
     safeInit(initNewGroupModal);
     safeInit(initBulkTaskModal);
+    safeInit(initChatPopout);
 });
 
 /* ═══════════════════════════════════════════
@@ -666,7 +667,11 @@ function updateBadges() {
 
 /* ═══════════════════════════════════════════
    CHARTS
+/* ═══════════════════════════════════════════
+   CHARTS
 ═══════════════════════════════════════════ */
+let activityDays = 7;
+
 function initCharts() {
     const actCtx = document.getElementById('activityChart')?.getContext('2d');
     if (!actCtx) return;
@@ -675,15 +680,45 @@ function initCharts() {
         data: {
             labels: [],
             datasets: [
-                { label: 'Created',   data: [], borderColor: '#3d9c94', backgroundColor: 'rgba(61,156,148,0.08)', fill: true, tension: 0.4, pointRadius: 4 },
-                { label: 'Completed', data: [], borderColor: '#5c6bc0', backgroundColor: 'rgba(92,107,192,0.06)', fill: true, tension: 0.4, pointRadius: 4 }
+                { label: 'Created',   data: [], borderColor: '#3d9c94', backgroundColor: 'rgba(61,156,148,0.10)', fill: true, tension: 0.4, pointRadius: 5, pointHoverRadius: 7 },
+                { label: 'Completed', data: [], borderColor: '#5c6bc0', backgroundColor: 'rgba(92,107,192,0.06)', fill: true, tension: 0.4, pointRadius: 5, pointHoverRadius: 7 }
             ]
         },
         options: {
             responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: { x: { display: false }, y: { beginAtZero: true, display: false } }
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'var(--surface)',
+                    titleColor: 'var(--text-main)',
+                    bodyColor: 'var(--text-muted)',
+                    borderColor: 'var(--border)',
+                    borderWidth: 1,
+                    padding: 10,
+                    callbacks: {
+                        title: (items) => items[0]?.label || '',
+                        label: (item) => ` ${item.dataset.label}: ${item.parsed.y} task(s)`
+                    }
+                }
+            },
+            scales: {
+                x: { display: true, grid: { display: false }, ticks: { color: 'var(--text-muted)', font: { size: 10 } } },
+                y: { beginAtZero: true, display: true, grid: { color: 'var(--border)' }, ticks: { color: 'var(--text-muted)', font: { size: 10 }, stepSize: 1 } }
+            }
         }
+    });
+
+    // Date range buttons
+    document.querySelectorAll('.range-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            activityDays = parseInt(btn.dataset.range);
+            const titleEl = document.getElementById('activity-chart-title');
+            if (titleEl) titleEl.textContent = `Task Activity (Last ${activityDays} Days)`;
+            updateActivityChart();
+        });
     });
 
     const ringCtx = document.getElementById('completionRing')?.getContext('2d');
@@ -696,9 +731,30 @@ function initCharts() {
 }
 
 function updateCharts() {
+    updateActivityChart();
     updateCompletionRing();
     updatePriorityBars();
 }
+
+function updateActivityChart() {
+    if (!activityChart) return;
+    const days = [];
+    for (let i = activityDays - 1; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        d.setHours(0, 0, 0, 0);
+        days.push(d);
+    }
+    const fmt = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const labels = days.map(fmt);
+    const created   = days.map(d => allTasks.filter(t => { const c = new Date(t.createdAt); c.setHours(0,0,0,0); return c.getTime() === d.getTime(); }).length);
+    const completed = days.map(d => allTasks.filter(t => { if (!t.completedAt) return false; const c = new Date(t.completedAt); c.setHours(0,0,0,0); return c.getTime() === d.getTime(); }).length);
+    activityChart.data.labels = labels;
+    activityChart.data.datasets[0].data = created;
+    activityChart.data.datasets[1].data = completed;
+    activityChart.update();
+}
+
 
 function updateCompletionRing() {
     if (!completionRing) return;
@@ -934,7 +990,7 @@ function renderGroups() {
     `).join('');
 
     grid.querySelectorAll('.open-chat-btn').forEach(btn => {
-        btn.addEventListener('click', () => window.location.href = `chat.html?group=${btn.dataset.id}`);
+        btn.addEventListener('click', () => openChatPopout(parseInt(btn.dataset.id)));
     });
     grid.querySelectorAll('.invite-btn').forEach(btn => {
         btn.addEventListener('click', () => openInviteModal(parseInt(btn.dataset.id), btn.dataset.name));
@@ -965,7 +1021,7 @@ function renderGroups() {
             dashList.querySelectorAll('.dash-group-item').forEach(el => {
                 el.addEventListener('mouseover', () => el.style.borderColor = 'var(--border)');
                 el.addEventListener('mouseout', () => el.style.borderColor = 'transparent');
-                el.addEventListener('click', () => window.location.href = `chat.html?group=${el.dataset.id}`);
+                el.addEventListener('click', () => openChatPopout(parseInt(el.dataset.id)));
             });
         }
     }
@@ -1266,4 +1322,98 @@ function formatTimeAgo(date) {
     if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
     if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+/* \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+   CHAT POPOUT
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 */
+let chatPopoutGroupId = null;
+let chatPollTimer = null;
+
+function initChatPopout() {
+    document.getElementById('chat-popout-close')?.addEventListener('click', closeChatPopout);
+    document.getElementById('chat-popout-backdrop')?.addEventListener('click', closeChatPopout);
+    document.getElementById('chat-popout-form')?.addEventListener('submit', async e => {
+        e.preventDefault();
+        const input = document.getElementById('chat-popout-input');
+        const body = input.value.trim();
+        if (!body || !chatPopoutGroupId) return;
+        input.value = '';
+        try {
+            await fetch(`${API_BASE}/groups/${chatPopoutGroupId}/messages`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Session-Token': currentUser.token },
+                body: JSON.stringify({ body })
+            });
+            await loadChatMessages();
+        } catch {}
+    });
+}
+
+async function openChatPopout(groupId) {
+    chatPopoutGroupId = groupId;
+    const group = allGroups.find(g => g.id === groupId);
+    const name = group ? group.name : 'Group Chat';
+
+    document.getElementById('chat-popout-name').textContent = name;
+    document.getElementById('chat-popout-avatar').textContent = name.charAt(0).toUpperCase();
+    document.getElementById('chat-popout-sub').textContent = group ? `${group.memberCount} member(s)` : '';
+    document.getElementById('chat-popout-messages').innerHTML = '<div class="chat-loading">Loading messages...</div>';
+
+    document.getElementById('chat-popout').classList.add('open');
+    document.getElementById('chat-popout-backdrop').classList.add('open');
+    document.getElementById('chat-popout-input').focus();
+    lucide.createIcons();
+
+    await loadChatMessages();
+
+    // Poll for new messages every 5s
+    clearInterval(chatPollTimer);
+    chatPollTimer = setInterval(loadChatMessages, 5000);
+}
+
+function closeChatPopout() {
+    document.getElementById('chat-popout').classList.remove('open');
+    document.getElementById('chat-popout-backdrop').classList.remove('open');
+    clearInterval(chatPollTimer);
+    chatPollTimer = null;
+    chatPopoutGroupId = null;
+}
+
+async function loadChatMessages() {
+    if (!chatPopoutGroupId) return;
+    try {
+        const res = await fetch(`${API_BASE}/groups/${chatPopoutGroupId}/messages`, {
+            headers: { 'X-Session-Token': currentUser.token }
+        });
+        if (!res.ok) return;
+        const messages = await res.json();
+        renderChatMessages(messages);
+    } catch {}
+}
+
+function renderChatMessages(messages) {
+    const container = document.getElementById('chat-popout-messages');
+    if (!container) return;
+
+    if (!messages.length) {
+        container.innerHTML = '<div class="chat-loading">No messages yet. Say hello! \uD83D\uDC4B</div>';
+        return;
+    }
+
+    const wasAtBottom = container.scrollHeight - container.clientHeight <= container.scrollTop + 60;
+
+    container.innerHTML = messages.map(m => {
+        const mine = m.senderUserId === currentUser.id;
+        const time = formatTimeAgo(new Date(m.createdAt));
+        return `
+            <div class="chat-msg ${mine ? 'mine' : 'theirs'}">
+                ${!mine ? `<div class="chat-msg-sender">${escapeHtml(m.senderName)}</div>` : ''}
+                <div class="chat-msg-bubble">${escapeHtml(m.body)}</div>
+                <div class="chat-msg-time">${time}</div>
+            </div>
+        `;
+    }).join('');
+
+    if (wasAtBottom) container.scrollTop = container.scrollHeight;
 }
