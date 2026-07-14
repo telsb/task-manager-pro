@@ -56,7 +56,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     safeInit(initCharts);
     safeInit(initTabs);
     safeInit(initDensityToggle);
-    safeInit(initCommandPalette);
     safeInit(initQuickAdd);
 
     await fetchTasks();
@@ -142,6 +141,10 @@ function initHeaderNav() {
     document.querySelectorAll('.stat-item[data-view]').forEach(item => {
         item.addEventListener('click', () => switchView(item.dataset.view));
     });
+
+    // Dash admin buttons
+    const manageUsersBtn = document.getElementById('dash-manage-users-btn');
+    if (manageUsersBtn) manageUsersBtn.addEventListener('click', () => switchView('users'));
 }
 
 function switchView(viewName) {
@@ -745,17 +748,7 @@ function initDensityToggle() {
    COMMAND PALETTE & QUICK ADD
 ═══════════════════════════════════════════ */
 function initCommandPalette() {
-    const palette = document.getElementById('command-palette');
-    const input   = document.getElementById('cmd-input');
-    if (!palette || !input) return;
-    const open = () => { palette.classList.add('open'); input.value = ''; input.focus(); };
-    const close = () => palette.classList.remove('open');
-    document.getElementById('cmd-palette-btn').addEventListener('click', open);
-    window.addEventListener('keydown', e => {
-        if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); open(); }
-        if (e.key === 'Escape' && palette.classList.contains('open')) close();
-    });
-    palette.addEventListener('click', e => { if (e.target === palette) close(); });
+    // Removed — command palette is disabled
 }
 
 function initQuickAdd() {

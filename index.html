@@ -81,11 +81,7 @@
                     <i data-lucide="calendar-days"></i>
                     <span id="header-date-text"></span>
                 </div>
-                <button class="btn-kbd" id="cmd-palette-btn" aria-label="Open command palette" title="Command Palette (Ctrl+K)">
-                    <i data-lucide="command"></i>
-                    <kbd>K</kbd>
-                </button>
-                <button class="btn-primary add-task-btn" id="open-modal-btn" aria-label="Add new task">
+                <button class="btn-primary add-task-btn admin-only" id="open-modal-btn" aria-label="Add new task">
                     <i data-lucide="plus"></i>
                     <span>New Task</span>
                 </button>
@@ -193,8 +189,8 @@
                         <a href="#" class="see-all-link" data-view="all">See all →</a>
                     </div>
 
-                    <!-- Inline Quick-Add -->
-                    <form class="quick-add-row" id="quick-add-form" autocomplete="off">
+                    <!-- Inline Quick-Add (admin only) -->
+                    <form class="quick-add-row admin-only" id="quick-add-form" autocomplete="off">
                         <i data-lucide="zap" class="quick-add-icon"></i>
                         <div class="quick-add-inner">
                             <input type="text" id="quick-add-input"
@@ -222,7 +218,7 @@
 
                     <div class="admin-only" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px;">
                         <h2 class="card-title" style="margin-bottom: 12px;">Admin Tools</h2>
-                        <button class="btn-secondary" data-view="users" style="width: 100%; justify-content: center; margin-bottom: 8px;">
+                        <button class="btn-secondary" id="dash-manage-users-btn" style="width: 100%; justify-content: center; margin-bottom: 8px;">
                             <i data-lucide="users"></i> Manage Users
                         </button>
                         <button class="btn-secondary" id="dash-new-group-btn" style="width: 100%; justify-content: center; margin-bottom: 8px;">
@@ -502,13 +498,13 @@
     </div>
 
     <!-- ═══════════════ CREATE GROUP MODAL ═══════════════ -->
-    <div class="modal-overlay" id="create-group-modal" aria-modal="true" role="dialog">
+    <div class="modal-overlay" id="new-group-modal" aria-modal="true" role="dialog">
         <div class="modal-card small">
             <div class="modal-header">
                 <h2>Create New Group</h2>
-                <button class="modal-close" id="close-create-group-btn" aria-label="Close"><i data-lucide="x"></i></button>
+                <button class="modal-close" id="close-new-group-btn" aria-label="Close"><i data-lucide="x"></i></button>
             </div>
-            <form id="create-group-form" class="modal-form">
+            <form id="new-group-form" class="modal-form">
                 <div class="form-group">
                     <label for="group-name">Group Name <span class="required">*</span></label>
                     <input type="text" id="group-name" placeholder="e.g. Design Team" required autocomplete="off">
@@ -518,7 +514,7 @@
                     <textarea id="group-desc" placeholder="What is this group about?" rows="2"></textarea>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn-secondary" id="cancel-create-group-btn">Cancel</button>
+                    <button type="button" class="btn-secondary" id="cancel-new-group-btn">Cancel</button>
                     <button type="submit" class="btn-primary">Create Group</button>
                 </div>
             </form>
