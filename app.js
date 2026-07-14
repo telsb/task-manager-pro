@@ -61,6 +61,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (currentUser.role === 'admin') {
         await fetchUsers();
     }
+    await fetchGroups();
+    initNotifications();
+    initGroupModals();
+    initBulkTaskModal();
 });
 
 /* ═══════════════════════════════════════════
@@ -156,6 +160,7 @@ function switchView(viewName) {
         active:    ['Active Tasks', 'Tasks in progress'],
         completed: ['Completed Tasks', "Tasks you've finished"],
         overdue:   ['Overdue Tasks', 'Tasks past their due date'],
+        groups:    ['Groups', 'Collaborate with your team'],
         users:     ['User Management', 'Manage team members and roles']
     };
     const [title, subtitle] = titles[viewName] || ['Tasks', ''];
@@ -163,6 +168,7 @@ function switchView(viewName) {
     document.getElementById('page-subtitle').textContent = subtitle;
 
     if (viewName === 'users') renderUsers();
+    else if (viewName === 'groups') renderGroups();
     else renderCurrentView();
     lucide.createIcons();
 }
@@ -849,4 +855,351 @@ function capitalize(str) { return str ? str.charAt(0).toUpperCase() + str.slice(
 function escapeHtml(str) {
     if (!str) return '';
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+/* ═══════════════════════════════════════════
+   GROUPS
+═══════════════════════════════════════════ */
+let allGroups = [];
+let invitingGroupId = null;
+
+async function fetchGroups() {
+    try {
+        const res = await fetch(`${API_BASE}/groups`, { headers: { 'X-Session-Token': currentUser.token } });
+        if (!res.ok) return;
+        allGroups = await res.json();
+        if (currentView === 'groups') renderGroups();
+    } catch {}
+}
+
+function renderGroups() {
+    const grid = document.getElementById('groups-grid');
+    if (!grid) return;
+    if (!allGroups.length) {
+        grid.innerHTML = `<div class="empty-state" style="display:flex;grid-column:1/-1;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <p>No groups yet</p>
+            <span>${currentUser.role === 'admin' ? 'Click "New Group" to create one' : 'You haven\'t been added to any groups yet'}</span>
+        </div>`;
+        return;
+    }
+    grid.innerHTML = allGroups.map(g => `
+        <div class="group-card" data-id="${g.id}">
+            <div class="gc-header">
+                <div class="gc-avatar">${g.name.charAt(0).toUpperCase()}</div>
+                <div class="gc-info">
+                    <div class="gc-name">${escapeHtml(g.name)}</div>
+                    <div class="gc-desc">${escapeHtml(g.description || 'No description')}</div>
+                </div>
+            </div>
+            <div class="gc-meta">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                ${g.memberCount} member${g.memberCount !== 1 ? 's' : ''}
+            </div>
+            <div class="gc-actions">
+                <button class="btn-secondary open-chat-btn" data-id="${g.id}">💬 Open Chat</button>
+                ${currentUser.role === 'admin' ? `
+                    <button class="btn-secondary invite-btn" data-id="${g.id}" data-name="${escapeHtml(g.name)}">Invite</button>
+                    <button class="btn-danger-outline delete-group-btn" data-id="${g.id}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
+                ` : ''}
+            </div>
+        </div>
+    `).join('');
+
+    grid.querySelectorAll('.open-chat-btn').forEach(btn => {
+        btn.addEventListener('click', () => window.location.href = `chat.html?group=${btn.dataset.id}`);
+    });
+    grid.querySelectorAll('.invite-btn').forEach(btn => {
+        btn.addEventListener('click', () => openInviteModal(parseInt(btn.dataset.id), btn.dataset.name));
+    });
+    grid.querySelectorAll('.delete-group-btn').forEach(btn => {
+        btn.addEventListener('click', () => deleteGroup(parseInt(btn.dataset.id)));
+    });
+    lucide.createIcons();
+}
+
+async function deleteGroup(id) {
+    if (!confirm('Delete this group and all its chat messages?')) return;
+    try {
+        await fetch(`${API_BASE}/groups/${id}`, { method: 'DELETE', headers: { 'X-Session-Token': currentUser.token } });
+        await fetchGroups();
+    } catch {}
+}
+
+function initGroupModals() {
+    // Create Group
+    const createModal = document.getElementById('create-group-modal');
+    const createForm  = document.getElementById('create-group-form');
+    const openBtn     = document.getElementById('open-create-group-btn');
+    if (openBtn) {
+        openBtn.addEventListener('click', () => { createForm.reset(); createModal.classList.add('open'); });
+    }
+    document.getElementById('close-create-group-btn')?.addEventListener('click', () => createModal.classList.remove('open'));
+    document.getElementById('cancel-create-group-btn')?.addEventListener('click', () => createModal.classList.remove('open'));
+    createModal?.addEventListener('click', e => { if (e.target === createModal) createModal.classList.remove('open'); });
+
+    createForm?.addEventListener('submit', async e => {
+        e.preventDefault();
+        const name = document.getElementById('group-name').value.trim();
+        const desc = document.getElementById('group-desc').value.trim();
+        if (!name) return;
+        try {
+            const res = await fetch(`${API_BASE}/groups`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Session-Token': currentUser.token },
+                body: JSON.stringify({ name, description: desc })
+            });
+            if (res.ok) { createModal.classList.remove('open'); await fetchGroups(); }
+        } catch {}
+    });
+
+    // Invite Modal
+    const inviteModal = document.getElementById('invite-modal');
+    document.getElementById('close-invite-btn')?.addEventListener('click', () => inviteModal.classList.remove('open'));
+    document.getElementById('cancel-invite-btn')?.addEventListener('click', () => inviteModal.classList.remove('open'));
+    inviteModal?.addEventListener('click', e => { if (e.target === inviteModal) inviteModal.classList.remove('open'); });
+
+    document.getElementById('confirm-invite-btn')?.addEventListener('click', async () => {
+        if (!invitingGroupId) return;
+        const checked = [...document.querySelectorAll('#invite-user-list input[type=checkbox]:checked')];
+        const userIds = checked.map(cb => parseInt(cb.value));
+        if (!userIds.length) return;
+        try {
+            await fetch(`${API_BASE}/groups/${invitingGroupId}/invite`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Session-Token': currentUser.token },
+                body: JSON.stringify({ userIds })
+            });
+            inviteModal.classList.remove('open');
+        } catch {}
+    });
+}
+
+function openInviteModal(groupId, groupName) {
+    invitingGroupId = groupId;
+    document.getElementById('invite-modal-title').textContent = `Invite to: ${groupName}`;
+    const list = document.getElementById('invite-user-list');
+    if (!allUsers.length) {
+        list.innerHTML = '<div style="color:var(--text-muted);padding:8px;">No other users found.</div>';
+    } else {
+        list.innerHTML = allUsers
+            .filter(u => u.id !== currentUser.id)
+            .map(u => `
+                <label class="user-checklist-item">
+                    <input type="checkbox" value="${u.id}">
+                    <div class="uci-avatar">${u.name.charAt(0).toUpperCase()}</div>
+                    <div>
+                        <div class="uci-name">${escapeHtml(u.name)}</div>
+                        <div class="uci-sub">@${escapeHtml(u.username)}</div>
+                    </div>
+                </label>
+            `).join('');
+    }
+    document.getElementById('invite-modal').classList.add('open');
+}
+
+/* ═══════════════════════════════════════════
+   BULK TASK MODAL
+═══════════════════════════════════════════ */
+function initBulkTaskModal() {
+    const modal = document.getElementById('bulk-task-modal');
+    const form  = document.getElementById('bulk-task-form');
+    const openBtn = document.getElementById('open-bulk-task-btn');
+
+    if (!openBtn) return;
+
+    openBtn.addEventListener('click', () => {
+        form.reset();
+        renderBulkUserList();
+        renderBulkGroupPick();
+        modal.classList.add('open');
+    });
+
+    document.getElementById('close-bulk-task-btn')?.addEventListener('click', () => modal.classList.remove('open'));
+    document.getElementById('cancel-bulk-task-btn')?.addEventListener('click', () => modal.classList.remove('open'));
+    modal?.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
+
+    form?.addEventListener('submit', async e => {
+        e.preventDefault();
+        const title    = document.getElementById('bulk-title').value.trim();
+        const desc     = document.getElementById('bulk-desc').value.trim();
+        const priority = document.getElementById('bulk-priority').value;
+        const dueRaw   = document.getElementById('bulk-due').value;
+        const dueDate  = dueRaw ? new Date(dueRaw).toISOString() : null;
+        const checked  = [...document.querySelectorAll('#bulk-user-list input[type=checkbox]:checked')];
+        const userIds  = checked.map(cb => parseInt(cb.value));
+
+        if (!title || !userIds.length) {
+            alert(!title ? 'Please enter a task title.' : 'Please select at least one user.');
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_BASE}/tasks/bulk`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Session-Token': currentUser.token },
+                body: JSON.stringify({ title, description: desc, priority, dueDate, userIds })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                modal.classList.remove('open');
+                alert(`✅ ${data.message}`);
+                await fetchTasks();
+            }
+        } catch {}
+    });
+}
+
+function renderBulkUserList() {
+    const list = document.getElementById('bulk-user-list');
+    if (!allUsers.length) {
+        list.innerHTML = '<div style="color:var(--text-muted);padding:8px;">No users found.</div>';
+        return;
+    }
+    list.innerHTML = allUsers.map(u => `
+        <label class="user-checklist-item">
+            <input type="checkbox" value="${u.id}">
+            <div class="uci-avatar">${u.name.charAt(0).toUpperCase()}</div>
+            <div>
+                <div class="uci-name">${escapeHtml(u.name)}</div>
+                <div class="uci-sub">@${escapeHtml(u.username)}</div>
+            </div>
+        </label>
+    `).join('');
+}
+
+function renderBulkGroupPick() {
+    const pick = document.getElementById('bulk-group-pick');
+    if (!allGroups.length) { pick.innerHTML = ''; return; }
+    pick.innerHTML = '<span style="font-size:0.75rem;color:var(--text-muted);align-self:center;">Select group:</span>' +
+        allGroups.map(g => `<button type="button" class="bulk-group-btn" data-id="${g.id}">${escapeHtml(g.name)}</button>`).join('');
+
+    pick.querySelectorAll('.bulk-group-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const groupId = parseInt(btn.dataset.id);
+            try {
+                const res = await fetch(`${API_BASE}/groups/${groupId}/members`, { headers: { 'X-Session-Token': currentUser.token } });
+                if (!res.ok) return;
+                const members = await res.json();
+                const memberIds = new Set(members.map(m => m.id));
+                document.querySelectorAll('#bulk-user-list input[type=checkbox]').forEach(cb => {
+                    cb.checked = memberIds.has(parseInt(cb.value));
+                });
+            } catch {}
+        });
+    });
+}
+
+/* ═══════════════════════════════════════════
+   NOTIFICATIONS
+═══════════════════════════════════════════ */
+let allNotifications = [];
+
+function initNotifications() {
+    const bell     = document.getElementById('notif-bell-btn');
+    const dropdown = document.getElementById('notif-dropdown');
+
+    bell?.addEventListener('click', e => {
+        e.stopPropagation();
+        const isOpen = dropdown.style.display !== 'none';
+        dropdown.style.display = isOpen ? 'none' : 'block';
+        if (!isOpen) fetchNotifications();
+    });
+
+    document.addEventListener('click', e => {
+        if (!document.getElementById('notif-bell-wrap')?.contains(e.target)) {
+            if (dropdown) dropdown.style.display = 'none';
+        }
+    });
+
+    document.getElementById('notif-read-all-btn')?.addEventListener('click', async () => {
+        try {
+            await fetch(`${API_BASE}/notifications/read-all`, { method: 'POST', headers: { 'X-Session-Token': currentUser.token } });
+            await fetchNotifications();
+        } catch {}
+    });
+
+    // Poll every 20s
+    fetchNotifications();
+    setInterval(fetchNotifications, 20000);
+}
+
+async function fetchNotifications() {
+    try {
+        const res = await fetch(`${API_BASE}/notifications`, { headers: { 'X-Session-Token': currentUser.token } });
+        if (!res.ok) return;
+        allNotifications = await res.json();
+        renderNotifications();
+    } catch {}
+}
+
+function renderNotifications() {
+    const badge = document.getElementById('notif-badge');
+    const list  = document.getElementById('notif-list');
+    if (!badge || !list) return;
+
+    const unreadCount = allNotifications.filter(n => !n.isRead).length;
+    badge.textContent = unreadCount;
+    badge.style.display = unreadCount > 0 ? 'flex' : 'none';
+
+    if (!allNotifications.length) {
+        list.innerHTML = '<div class="notif-empty">No notifications yet</div>';
+        return;
+    }
+
+    list.innerHTML = allNotifications.map(n => {
+        const isInvite = n.type === 'group_invite';
+        let payload = {};
+        try { payload = JSON.parse(n.payload || '{}'); } catch {}
+
+        const timeAgo = formatTimeAgo(new Date(n.createdAt));
+
+        const actionBtns = isInvite && !n.isRead ? `
+            <div class="notif-actions">
+                <button class="notif-action-btn accept" data-notif-id="${n.id}" data-group-id="${payload.groupId}" data-action="accept">✅ Accept</button>
+                <button class="notif-action-btn decline" data-notif-id="${n.id}" data-group-id="${payload.groupId}" data-action="decline">❌ Decline</button>
+            </div>
+        ` : '';
+
+        return `
+            <div class="notif-item ${n.isRead ? '' : 'unread'}" data-id="${n.id}">
+                <div class="notif-item-title">
+                    ${!n.isRead ? '<span class="notif-unread-dot"></span>' : ''}
+                    ${escapeHtml(n.title)}
+                </div>
+                <div class="notif-item-body">${escapeHtml(n.body)}</div>
+                <div class="notif-item-time">${timeAgo}</div>
+                ${actionBtns}
+            </div>
+        `;
+    }).join('');
+
+    // Bind accept/decline
+    list.querySelectorAll('.notif-action-btn').forEach(btn => {
+        btn.addEventListener('click', async e => {
+            e.stopPropagation();
+            const notifId = parseInt(btn.dataset.notifId);
+            const groupId = parseInt(btn.dataset.groupId);
+            const action  = btn.dataset.action;
+            try {
+                await fetch(`${API_BASE}/groups/${groupId}/respond`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Session-Token': currentUser.token },
+                    body: JSON.stringify({ action, notificationId: notifId })
+                });
+                await fetchNotifications();
+                await fetchGroups();
+            } catch {}
+        });
+    });
+}
+
+function formatTimeAgo(date) {
+    const diff = Math.floor((Date.now() - date.getTime()) / 1000);
+    if (diff < 60)  return 'just now';
+    if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }

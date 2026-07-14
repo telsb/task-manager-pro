@@ -44,6 +44,7 @@
                     <button class="header-nav-btn" data-view="active"><i data-lucide="clock"></i><span>Active</span><span class="nav-count" id="badge-active">0</span></button>
                     <button class="header-nav-btn" data-view="completed"><i data-lucide="circle-check-big"></i><span>Completed</span></button>
                     <button class="header-nav-btn" data-view="overdue"><i data-lucide="triangle-alert"></i><span>Overdue</span><span class="nav-count danger" id="badge-overdue">0</span></button>
+                    <button class="header-nav-btn" data-view="groups"><i data-lucide="users-round"></i><span>Groups</span></button>
                     <button class="header-nav-btn admin-only" data-view="users"><i data-lucide="users"></i><span>Users</span></button>
                     <a href="admin.html" class="header-nav-btn admin-only" id="admin-dashboard-link" style="text-decoration:none;"><i data-lucide="shield-check"></i><span>Admin Panel</span></a>
                 </nav>
@@ -61,6 +62,23 @@
                         <span class="user-role" id="header-role">Role</span>
                     </div>
                     <button class="logout-btn" id="logout-btn" title="Logout"><i data-lucide="log-out"></i></button>
+                </div>
+
+                <!-- Notification Bell -->
+                <div class="notif-bell-wrap" id="notif-bell-wrap">
+                    <button class="notif-bell-btn" id="notif-bell-btn" aria-label="Notifications" title="Notifications">
+                        <i data-lucide="bell"></i>
+                        <span class="notif-badge" id="notif-badge" style="display:none">0</span>
+                    </button>
+                    <div class="notif-dropdown" id="notif-dropdown" style="display:none">
+                        <div class="notif-header">
+                            <span>Notifications</span>
+                            <button class="notif-read-all" id="notif-read-all-btn">Mark all read</button>
+                        </div>
+                        <div class="notif-list" id="notif-list">
+                            <div class="notif-empty">No notifications yet</div>
+                        </div>
+                    </div>
                 </div>
                 <div class="header-date hidden">
                     <i data-lucide="calendar-days"></i>
@@ -274,6 +292,32 @@
             </div>
         </div>
 
+        <!-- ─── GROUPS VIEW ─── -->
+        <div class="view" id="view-groups">
+            <div class="card tasks-panel">
+                <div class="tasks-panel-header">
+                    <div class="filter-row" style="justify-content:space-between;align-items:center;">
+                        <span style="font-weight:600;color:var(--text-main);">Your Groups</span>
+                        <div style="display:flex;gap:8px;">
+                            <button class="btn-primary admin-only" id="open-bulk-task-btn" style="font-size:0.8rem;padding:7px 14px;">
+                                <i data-lucide="send"></i> Bulk Send Task
+                            </button>
+                            <button class="btn-primary admin-only" id="open-create-group-btn" style="font-size:0.8rem;padding:7px 14px;">
+                                <i data-lucide="plus"></i> New Group
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="groups-grid" id="groups-grid">
+                    <div class="empty-state" style="display:flex;">
+                        <i data-lucide="users-round"></i>
+                        <p>No groups yet</p>
+                        <span>Create a group to start collaborating</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div><!-- /.main-wrapper -->
 
     <!-- ═══════════════ COMMAND PALETTE ═══════════════ -->
@@ -428,6 +472,102 @@
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary" id="cancel-user-modal-btn">Cancel</button>
                     <button type="submit" class="btn-primary" id="save-user-btn">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ═══════════════ CREATE GROUP MODAL ═══════════════ -->
+    <div class="modal-overlay" id="create-group-modal" aria-modal="true" role="dialog">
+        <div class="modal-card small">
+            <div class="modal-header">
+                <h2>Create New Group</h2>
+                <button class="modal-close" id="close-create-group-btn" aria-label="Close"><i data-lucide="x"></i></button>
+            </div>
+            <form id="create-group-form" class="modal-form">
+                <div class="form-group">
+                    <label for="group-name">Group Name <span class="required">*</span></label>
+                    <input type="text" id="group-name" placeholder="e.g. Design Team" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="group-desc">Description</label>
+                    <textarea id="group-desc" placeholder="What is this group about?" rows="2"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" id="cancel-create-group-btn">Cancel</button>
+                    <button type="submit" class="btn-primary">Create Group</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ═══════════════ INVITE USERS MODAL ═══════════════ -->
+    <div class="modal-overlay" id="invite-modal" aria-modal="true" role="dialog">
+        <div class="modal-card small">
+            <div class="modal-header">
+                <h2 id="invite-modal-title">Invite to Group</h2>
+                <button class="modal-close" id="close-invite-btn" aria-label="Close"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-form">
+                <div class="form-group">
+                    <label>Select Users to Invite</label>
+                    <div class="user-checklist" id="invite-user-list">
+                        <div style="color:var(--text-sub);font-size:0.85rem;">Loading users…</div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" id="cancel-invite-btn">Cancel</button>
+                    <button type="button" class="btn-primary" id="confirm-invite-btn">Send Invitations</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ BULK SEND TASK MODAL ═══════════════ -->
+    <div class="modal-overlay" id="bulk-task-modal" aria-modal="true" role="dialog">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2>Bulk Send Task</h2>
+                <button class="modal-close" id="close-bulk-task-btn" aria-label="Close"><i data-lucide="x"></i></button>
+            </div>
+            <form id="bulk-task-form" class="modal-form">
+                <div class="form-group">
+                    <label for="bulk-title">Task Title <span class="required">*</span></label>
+                    <input type="text" id="bulk-title" placeholder="What needs to be done?" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="bulk-desc">Description</label>
+                    <textarea id="bulk-desc" placeholder="Details (optional)" rows="2"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="bulk-priority">Priority</label>
+                        <select id="bulk-priority">
+                            <option value="low">🟢 Low</option>
+                            <option value="medium" selected>🟡 Medium</option>
+                            <option value="high">🟠 High</option>
+                            <option value="critical">🔴 Critical</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="bulk-due">Due Date</label>
+                        <input type="datetime-local" id="bulk-due">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Send To (select users)</label>
+                    <div class="bulk-group-pick" id="bulk-group-pick">
+                        <!-- Group buttons rendered by JS -->
+                    </div>
+                    <div class="user-checklist" id="bulk-user-list">
+                        <div style="color:var(--text-sub);font-size:0.85rem;padding:8px 0;">Loading users…</div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" id="cancel-bulk-task-btn">Cancel</button>
+                    <button type="submit" class="btn-primary" id="send-bulk-task-btn">
+                        <i data-lucide="send"></i> Send to Selected
+                    </button>
                 </div>
             </form>
         </div>
