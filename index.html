@@ -631,6 +631,48 @@
         </div>
     </div>
 
+    <!-- ═══════════════ TASK DETAILS MODAL ═══════════════ -->
+    <div class="modal-overlay" id="task-details-modal" aria-modal="true" role="dialog">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2 id="td-title" style="margin-right:24px;word-break:break-word;">Task Title</h2>
+                <button class="modal-close" id="close-task-details-btn" aria-label="Close"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body" style="padding:0 24px 24px;display:flex;flex-direction:column;gap:16px;">
+                <div class="td-meta" style="display:flex;gap:10px;flex-wrap:wrap;font-size:0.85rem;">
+                    <span class="badge" id="td-priority" style="font-weight:600;padding:4px 8px;border-radius:6px;"></span>
+                    <span class="badge-cat" id="td-category" style="background:var(--gray-2);padding:4px 8px;border-radius:6px;"></span>
+                    <span id="td-due" style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;background:var(--bg);border:1px solid var(--border);"></span>
+                </div>
+                
+                <div class="td-section">
+                    <h3 style="font-size:0.9rem;color:var(--text-sub);margin-bottom:8px;font-weight:600;">Description</h3>
+                    <div id="td-desc" style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;font-size:0.95rem;white-space:pre-wrap;min-height:60px;"></div>
+                </div>
+
+                <div class="td-section" style="display:flex;gap:24px;flex-wrap:wrap;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;">
+                    <div style="flex:1;min-width:140px;">
+                        <h3 style="font-size:0.8rem;color:var(--text-sub);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Assigned To</h3>
+                        <div id="td-assignee" style="font-weight:500;display:flex;align-items:center;gap:6px;"><i data-lucide="user" style="width:16px;height:16px;color:var(--text-muted);"></i><span></span></div>
+                    </div>
+                    <div style="flex:1;min-width:140px;">
+                        <h3 style="font-size:0.8rem;color:var(--text-sub);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Created By</h3>
+                        <div id="td-creator" style="font-weight:500;display:flex;align-items:center;gap:6px;"><i data-lucide="shield" style="width:16px;height:16px;color:var(--text-muted);"></i><span></span></div>
+                    </div>
+                </div>
+
+                <div class="td-section" style="display:flex;gap:24px;flex-wrap:wrap;font-size:0.85rem;color:var(--text-sub);">
+                    <div><strong style="color:var(--text-main);">Created:</strong> <span id="td-created-at"></span></div>
+                    <div id="td-completed-wrap" style="display:none;"><strong style="color:var(--teal);">Completed:</strong> <span id="td-completed-at"></span></div>
+                </div>
+            </div>
+            <div class="modal-actions" style="padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:12px;">
+                <button type="button" class="btn-secondary" id="td-edit-btn" style="display:none;"><i data-lucide="pencil" style="width:16px;height:16px;margin-right:6px;"></i> Edit</button>
+                <button type="button" class="btn-primary" id="td-close-btn">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ═══════════════ CHAT POPOUT PANEL ═══════════════ -->
     <div class="chat-popout-backdrop" id="chat-popout-backdrop"></div>
     <div class="chat-popout" id="chat-popout">

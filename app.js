@@ -73,6 +73,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('close-members-modal-btn')?.addEventListener('click', () => membersModal?.classList.remove('open'));
     document.getElementById('cancel-members-modal-btn')?.addEventListener('click', () => membersModal?.classList.remove('open'));
     membersModal?.addEventListener('click', e => { if (e.target === membersModal) membersModal.classList.remove('open'); });
+
+    // Task Details modal close buttons
+    const tdModal = document.getElementById('task-details-modal');
+    document.getElementById('close-task-details-btn')?.addEventListener('click', () => tdModal?.classList.remove('open'));
+    document.getElementById('td-close-btn')?.addEventListener('click', () => tdModal?.classList.remove('open'));
+    tdModal?.addEventListener('click', e => { if (e.target === tdModal) tdModal.classList.remove('open'); });
 });
 
 /* ═══════════════════════════════════════════
@@ -597,9 +603,10 @@ function renderTaskItems(listId, tasks, showBulk) {
         li.querySelector('.task-check').addEventListener('keydown', e => {
             if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleTask(task); }
         });
+        // Everyone can click task body to see details
+        li.querySelector('.task-body').addEventListener('click', () => openTaskDetailsModal(task));
         
         if (currentUser.role === 'admin') {
-            li.querySelector('.task-body').addEventListener('click', () => window._openTaskModal(task));
             li.querySelector('.action-btn.edit').addEventListener('click', e => { e.stopPropagation(); window._openTaskModal(task); });
             li.querySelector('.action-btn.delete').addEventListener('click', e => { e.stopPropagation(); triggerDelete(task.id); });
         }
@@ -610,6 +617,59 @@ function renderTaskItems(listId, tasks, showBulk) {
 
 async function toggleTask(task) {
     await updateTask(task.id, { ...task, isCompleted: !task.isCompleted });
+}
+
+function openTaskDetailsModal(task) {
+    const modal = document.getElementById('task-details-modal');
+    if (!modal) return;
+
+    document.getElementById('td-title').textContent = task.title;
+    
+    const prioEl = document.getElementById('td-priority');
+    prioEl.className = `badge badge-${task.priority}`;
+    prioEl.textContent = PRIORITY_LABEL[task.priority] || task.priority;
+    
+    document.getElementById('td-category').innerHTML = `${CATEGORY_EMOJI[task.category] || '📌'} ${capitalize(task.category)}`;
+    
+    const dueEl = document.getElementById('td-due');
+    if (task.dueDate) {
+        dueEl.innerHTML = `<i data-lucide="calendar" style="width:14px;height:14px;"></i> ${formatDueDate(task.dueDate)}`;
+        dueEl.style.display = 'flex';
+        dueEl.style.color = isOverdue(task) ? 'var(--red)' : 'var(--text-sub)';
+        dueEl.style.borderColor = isOverdue(task) ? 'rgba(239,68,68,0.2)' : 'var(--border)';
+    } else {
+        dueEl.style.display = 'none';
+    }
+
+    const descEl = document.getElementById('td-desc');
+    descEl.textContent = task.description || 'No description provided.';
+    descEl.style.color = task.description ? 'var(--text-main)' : 'var(--text-muted)';
+
+    document.getElementById('td-assignee').innerHTML = `<i data-lucide="user" style="width:16px;height:16px;color:var(--teal);"></i><span>${escapeHtml(task.assignedToName || 'Unassigned')}</span>`;
+    document.getElementById('td-creator').innerHTML = `<i data-lucide="shield" style="width:16px;height:16px;color:var(--text-muted);"></i><span>${escapeHtml(task.createdByName || 'Admin')}</span>`;
+
+    document.getElementById('td-created-at').textContent = new Date(task.createdAt).toLocaleString();
+    const compWrap = document.getElementById('td-completed-wrap');
+    if (task.isCompleted && task.completedAt) {
+        compWrap.style.display = 'block';
+        document.getElementById('td-completed-at').textContent = new Date(task.completedAt).toLocaleString();
+    } else {
+        compWrap.style.display = 'none';
+    }
+
+    const editBtn = document.getElementById('td-edit-btn');
+    if (currentUser.role === 'admin') {
+        editBtn.style.display = 'flex';
+        editBtn.onclick = () => {
+            modal.classList.remove('open');
+            window._openTaskModal(task);
+        };
+    } else {
+        editBtn.style.display = 'none';
+    }
+
+    modal.classList.add('open');
+    lucide.createIcons();
 }
 
 function renderUsers() {
