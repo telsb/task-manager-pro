@@ -42,29 +42,31 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.body.dataset.role = currentUser.role;
 
-    initUserProfile();
+    const safeInit = (fn) => { try { fn(); } catch(e) { console.error(`Init error in ${fn.name}:`, e); } };
+
+    safeInit(initUserProfile);
     lucide.createIcons();
     setHeaderDate();
-    initClock();
-    initHeaderNav();
-    initTaskModal();
-    initUserModal();
-    initSearch();
-    initFilters();
-    initCharts();
-    initTabs();
-    initDensityToggle();
-    initCommandPalette();
-    initQuickAdd();
-    
+    safeInit(initClock);
+    safeInit(initHeaderNav);
+    safeInit(initTaskModal);
+    safeInit(initUserModal);
+    safeInit(initSearch);
+    safeInit(initFilters);
+    safeInit(initCharts);
+    safeInit(initTabs);
+    safeInit(initDensityToggle);
+    safeInit(initCommandPalette);
+    safeInit(initQuickAdd);
+
     await fetchTasks();
     if (currentUser.role === 'admin') {
         await fetchUsers();
     }
     await fetchGroups();
-    initNotifications();
-    initNewGroupModal();
-    initBulkTaskModal();
+    safeInit(initNotifications);
+    safeInit(initNewGroupModal);
+    safeInit(initBulkTaskModal);
 });
 
 /* ═══════════════════════════════════════════
@@ -1013,7 +1015,7 @@ function initNewGroupModal() {
                 headers: { 'Content-Type': 'application/json', 'X-Session-Token': currentUser.token },
                 body: JSON.stringify({ name, description: desc })
             });
-            if (res.ok) { createModal.classList.remove('open'); await fetchGroups(); }
+            if (res.ok) { modal.classList.remove('open'); await fetchGroups(); }
         } catch {}
     });
 
